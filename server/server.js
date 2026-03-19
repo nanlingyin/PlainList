@@ -8,9 +8,10 @@ const path     = require('path');
 const bcrypt   = require('bcryptjs');
 const pool     = require('./db');
 
-const authRoutes   = require('./routes/auth');
-const plansRoutes  = require('./routes/plans');
-const checksRoutes = require('./routes/checks');
+const authRoutes    = require('./routes/auth');
+const plansRoutes   = require('./routes/plans');
+const checksRoutes  = require('./routes/checks');
+const pluginsRoutes = require('./routes/plugins');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -23,9 +24,10 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 
 /* ─── API routes ─────────────────────────────────────────── */
-app.use('/api/auth',   authRoutes);
-app.use('/api/plans',  plansRoutes);
-app.use('/api/checks', checksRoutes);
+app.use('/api/auth',    authRoutes);
+app.use('/api/plans',   plansRoutes);
+app.use('/api/checks',  checksRoutes);
+app.use('/api/plugins', pluginsRoutes);
 
 /* ─── Database initialisation ────────────────────────────── */
 async function initDB() {
@@ -65,6 +67,19 @@ async function initDB() {
         FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE,
         UNIQUE KEY uk_plan_date (plan_id, check_date),
         INDEX idx_checks_date (check_date)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS user_settings (
+        id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id    INT UNSIGNED    NOT NULL,
+        key_name   VARCHAR(100)    NOT NULL,
+        value      TEXT            NOT NULL,
+        updated_at TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+                   ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY uk_user_key (user_id, key_name)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 

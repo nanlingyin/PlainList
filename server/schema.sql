@@ -42,3 +42,15 @@ CREATE TABLE IF NOT EXISTS checks (
 
 -- ─── Seed admin account ───────────────────────────────────
 -- Password: admin  (bcrypt hash will be inserted by server on first run)
+
+-- ─── User settings (plugin storage) ──────────────────────
+CREATE TABLE IF NOT EXISTS user_settings (
+  id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED    NOT NULL,
+  key_name   VARCHAR(100)    NOT NULL,   -- e.g. 'installed_plugins'
+  value      TEXT            NOT NULL,   -- JSON string
+  updated_at TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+             ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_user_key (user_id, key_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

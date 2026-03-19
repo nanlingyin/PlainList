@@ -21,7 +21,7 @@ router.post('/register', async (req, res) => {
     }
     const name = username.toLowerCase().trim();
     if (!/^[a-zA-Z0-9_\-\.]{2,20}$/.test(name)) {
-      return res.status(400).json({ error: '2–20 chars, letters/numbers/_ only' });
+      return res.status(400).json({ error: '2–20 chars, letters/numbers/_/-/. only' });
     }
     if (password.length < 3) {
       return res.status(400).json({ error: 'at least 3 characters' });

@@ -279,12 +279,12 @@ checks
 | 库 | 版本 | 说明 |
 |---|---|---|
 | Apache ECharts | 5.4.3 | 前端图表（CDN） |
-| Express | 4.22 | Web 框架 |
-| mysql2 | 3.18 | MySQL 驱动 |
+| Express | 4.21 | Web 框架 |
+| mysql2 | 3.12 | MySQL 驱动 |
 | bcryptjs | 2.4 | 密码哈希（纯 JS，无需编译） |
 | jsonwebtoken | 9.0 | JWT 认证 |
 | cors | 2.8 | 跨域支持 |
-| dotenv | 16.6 | 环境变量 |
+| dotenv | 16.4 | 环境变量 |
 
 ---
 
