@@ -73,7 +73,7 @@ let scrollTimer = null
 function onScroll() {
   clearTimeout(scrollTimer)
   scrollTimer = setTimeout(() => {
-    for (const s of [...sections].reverse()) {
+    for (const s of [...sections.value].reverse()) {
       const el = document.getElementById(s.id)
       if (el && el.getBoundingClientRect().top <= 80) {
         activeSection.value = s.id

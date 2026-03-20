@@ -20,8 +20,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-/* ─── Serve frontend (index.html in parent directory) ────── */
-app.use(express.static(path.join(__dirname, '..')));
+/* ─── Serve Vue frontend (client/dist) ───────────────────── */
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
 /* ─── API routes ─────────────────────────────────────────── */
 app.use('/api/auth',    authRoutes);
