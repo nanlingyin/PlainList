@@ -4,7 +4,7 @@
       <div class="clock-panel">
         <div class="sec-tag"><span>01</span> &nbsp;/&nbsp; {{ t('section.now', 'Now') }}</div>
         <div id="clock-time">
-          <span id="ct-hm">{{ hm }}</span><span id="ct-sec" style="font-size:.45em;color:#333;vertical-align:baseline">{{ sec }}</span>
+          <span id="ct-hm">{{ hm }}</span><span id="ct-sec" style="font-size:.45em;color:var(--mid);vertical-align:baseline">{{ sec }}</span>
         </div>
         <div id="clock-date">{{ dateStr }}</div>
         <div id="clock-week">Week {{ weekNum }}  ·  Day {{ dayOfYear }}</div>

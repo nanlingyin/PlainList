@@ -3,28 +3,47 @@
     <div class="pv-sidebar">
       <div class="pv-header">
         <span class="pv-title">{{ t('plugins.title', 'Plugins') }}</span>
-        <button id="pv-close" @click="$emit('close')">×</button>
+        <button id="pv-close" @click="$emit('close')">x</button>
       </div>
-      <input id="pv-search" v-model="filterQ" placeholder="Search plugins…" autocomplete="off" />
+      <input
+        id="pv-search"
+        v-model="filterQ"
+        :placeholder="t('plugins.search', 'Search plugins')"
+        autocomplete="off"
+      >
       <div id="pv-tabs">
-        <button v-for="cat in categories" :key="cat.key"
-                :class="['pv-tab', filterCat === cat.key ? 'active' : '']"
-                @click="filterCat = cat.key">{{ cat.label }}</button>
+        <button
+          v-for="category in categories"
+          :key="category.key"
+          :class="['pv-tab', filterCat === category.key ? 'active' : '']"
+          @click="filterCat = category.key"
+        >
+          {{ category.label }}
+        </button>
       </div>
       <div id="pv-list">
-        <div v-for="p in filtered" :key="p.id"
-             :class="['pv-item', activeId === p.id ? 'active' : '']"
-             @click="activeId = p.id">
-          <div class="pv-item-name">{{ p.name }}</div>
-          <div class="pv-item-desc">{{ p.description }}</div>
-          <span v-if="plugins.installedIds.has(p.id)" class="pv-item-badge">{{ t('plugins.installed', 'Installed') }}</span>
+        <div
+          v-for="plugin in filtered"
+          :key="plugin.id"
+          :class="['pv-item', activeId === plugin.id ? 'active' : '']"
+          @click="activeId = plugin.id"
+        >
+          <div class="pv-item-name">{{ plugin.name }}</div>
+          <div class="pv-item-desc">{{ plugin.description }}</div>
+          <span v-if="plugins.installedIds.has(plugin.id)" class="pv-item-badge">
+            {{ t('plugins.installed', 'Installed') }}
+          </span>
         </div>
-        <div v-if="!filtered.length" style="padding:20px 16px;font-size:12px;color:var(--muted)">No plugins found</div>
+        <div v-if="!filtered.length" style="padding:20px 16px;font-size:12px;color:var(--muted)">
+          {{ t('plugins.empty', 'No plugins found') }}
+        </div>
       </div>
     </div>
 
     <div class="pv-detail">
-      <div v-if="!activePlugin" class="pv-detail-empty">Select a plugin</div>
+      <div v-if="!activePlugin" class="pv-detail-empty">
+        {{ t('plugins.select', 'Select a plugin') }}
+      </div>
       <template v-else>
         <div class="pv-detail-name">{{ activePlugin.name }}</div>
         <div class="pv-detail-meta">
@@ -34,16 +53,21 @@
         </div>
         <div class="pv-detail-desc">{{ activePlugin.longDescription || activePlugin.description }}</div>
 
-        <!-- Theme plugin -->
         <template v-if="activePlugin.category === 'theme' && activePlugin.themes">
-          <div class="pv-section-label">Themes</div>
+          <div class="pv-section-label">{{ t('plugins.themes', 'Themes') }}</div>
           <div class="pv-theme-grid">
-            <div v-for="theme in activePlugin.themes" :key="theme.id"
-                 :class="['pv-swatch', selectedThemeId === theme.id ? 'active' : '']"
-                 @click="onSwatchClick(theme)">
+            <div
+              v-for="theme in activePlugin.themes"
+              :key="theme.id"
+              :class="['pv-swatch', selectedThemeId === theme.id ? 'active' : '']"
+              @click="onSwatchClick(theme)"
+            >
               <div class="pv-swatch-colors">
-                <span v-for="v in ['--bg','--surface','--dark','--mid','--muted']" :key="v"
-                      :style="{ background: theme.vars[v] }"></span>
+                <span
+                  v-for="colorKey in ['--bg', '--surface', '--dark', '--mid', '--muted']"
+                  :key="colorKey"
+                  :style="{ background: theme.vars[colorKey] }"
+                />
               </div>
               <div class="pv-swatch-name">{{ theme.name }}</div>
             </div>
@@ -51,96 +75,122 @@
           <div class="pv-preview-area">
             <div v-if="previewTheme" class="pv-preview-cards">
               <div class="pv-card" :style="cardStyle(previewTheme.vars)">
-                <div class="pv-card-title" :style="{ color: previewTheme.vars['--dark'] }">Preview</div>
-                <div class="pv-card-body" :style="{ color: previewTheme.vars['--mid'] }">Sample text in this theme</div>
-                <div class="pv-card-muted" :style="{ color: previewTheme.vars['--muted'] }">Muted text</div>
-                <div class="pv-card-tag" :style="{ background: previewTheme.vars['--faint'], color: previewTheme.vars['--muted'] }">tag</div>
+                <div class="pv-card-title" :style="{ color: previewTheme.vars['--dark'] }">
+                  {{ t('plugins.preview', 'Preview') }}
+                </div>
+                <div class="pv-card-body" :style="{ color: previewTheme.vars['--mid'] }">
+                  {{ t('plugins.preview_text', 'Sample text in this theme') }}
+                </div>
+                <div class="pv-card-muted" :style="{ color: previewTheme.vars['--muted'] }">
+                  {{ t('plugins.preview_muted', 'Muted text') }}
+                </div>
+                <div class="pv-card-tag" :style="{ background: previewTheme.vars['--faint'], color: previewTheme.vars['--muted'] }">
+                  {{ t('plugins.preview_tag', 'tag') }}
+                </div>
               </div>
             </div>
           </div>
         </template>
 
-        <!-- Language plugin -->
-        <template v-else-if="activePlugin.category === 'language' && activePlugin.features">
-          <div class="pv-section-label">Features</div>
-          <ul class="pv-feature-list">
-            <li v-for="f in activePlugin.features" :key="f">{{ f }}</li>
-          </ul>
-        </template>
-
-        <!-- Actions -->
         <div class="pv-actions">
           <template v-if="plugins.installedIds.has(activePlugin.id)">
-            <button v-if="activePlugin.category === 'theme'" class="pv-btn" :disabled="saving" @click="applyTheme">Apply</button>
-            <button v-else class="pv-btn" disabled>Up to date</button>
-            <button class="pv-btn" :disabled="saving" @click="uninstall">{{ t('plugins.uninstall', 'Uninstall') }}</button>
+            <button
+              v-if="activePlugin.category === 'theme'"
+              class="pv-btn"
+              :disabled="saving"
+              @click="applyTheme"
+            >
+              {{ t('plugins.apply', 'Apply') }}
+            </button>
+            <button class="pv-btn" :disabled="saving" @click="uninstall">
+              {{ t('plugins.uninstall', 'Uninstall') }}
+            </button>
           </template>
           <template v-else>
-            <button class="pv-btn primary" :disabled="saving" @click="install">{{ t('plugins.install', 'Install') }}</button>
+            <button class="pv-btn primary" :disabled="saving" @click="install">
+              {{ t('plugins.install', 'Install') }}
+            </button>
           </template>
         </div>
-        <div class="pv-hint">{{ t('plugins.restart_hint', 'Changes take effect after re-login') }}</div>
+        <div class="pv-hint">
+          {{ t('plugins.restart_hint', 'Changes take effect after re-login') }}
+        </div>
       </template>
     </div>
   </div>
 </template>
 
-<script setup>
-import { computed, onMounted, ref, watch } from 'vue'
-import { usePluginsStore } from '@/features/plugins/model/usePluginsStore'
-import { useI18nStore } from '@/shared/i18n/useI18nStore'
+<script setup lang="ts">
+import type { PluginManifest, ThemeDefinition, ThemeVars } from '@plainlist/shared';
+import type { CSSProperties } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { usePluginsStore } from '@/features/plugins/model/usePluginsStore';
+import { useI18nStore } from '@/shared/i18n/useI18nStore';
 
-const _emit = defineEmits(['close'])
-const plugins = usePluginsStore()
-const i18n = useI18nStore()
-function t(key, fallback) { return i18n.t(key, fallback) }
+defineEmits(['close']);
 
-const filterQ = ref('')
-const filterCat = ref('all')
-const activeId = ref(null)
-const selectedThemeId = ref(null)
-const previewTheme = ref(null)
-const saving = ref(false)
+const plugins = usePluginsStore();
+const i18n = useI18nStore();
 
-const categories = computed(() => [
-  { key: 'all', label: t('plugins.tab.all', 'All') },
-  { key: 'theme', label: t('plugins.tab.theme', 'Theme') },
-  { key: 'language', label: t('plugins.tab.language', 'Language') },
-])
+const filterQ = ref('');
+const filterCat = ref<'all' | 'theme'>('all');
+const activeId = ref<string | null>(null);
+const selectedThemeId = ref<string | null>(null);
+const previewTheme = ref<ThemeDefinition | null>(null);
+const saving = ref(false);
 
-const filtered = computed(() => {
-  return plugins.available.filter(p => {
-    const matchCat = filterCat.value === 'all' || p.category === filterCat.value
-    const q = filterQ.value.toLowerCase()
-    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)
-    return matchCat && matchQ
-  })
-})
-
-const activePlugin = computed(() => plugins.available.find(p => p.id === activeId.value) || null)
-
-// When switching to a new plugin, set selectedThemeId to active theme
-watch(activePlugin, async p => {
-  if (!p) return
-  if (p.category === 'theme' && p.themes) {
-    // Load the saved active theme id from server
-    try {
-      const { themeId } = await plugins.getActiveThemeId()
-      selectedThemeId.value = themeId || p.themes[0]?.id || null
-    } catch {
-      selectedThemeId.value = p.themes[0]?.id || null
-    }
-    previewTheme.value = p.themes.find(t => t.id === selectedThemeId.value) || p.themes[0] || null
-  }
-})
-
-function onSwatchClick(theme) {
-  selectedThemeId.value = theme.id
-  previewTheme.value = theme
-  plugins.previewTheme(theme.vars)
+function t(key: string, fallback: string) {
+  return i18n.t(key, fallback);
 }
 
-function cardStyle(vars) {
+const categories = computed<Array<{ key: 'all' | 'theme'; label: string }>>(() => {
+  const base: Array<{ key: 'all' | 'theme'; label: string }> = [
+    { key: 'all', label: t('plugins.tab.all', 'All') },
+  ];
+  if (plugins.available.some((plugin) => plugin.category === 'theme')) {
+    base.push({ key: 'theme', label: t('plugins.tab.theme', 'Theme') });
+  }
+  return base;
+});
+
+const filtered = computed(() => (
+  plugins.available.filter((plugin) => {
+    const matchesCategory = filterCat.value === 'all' || plugin.category === filterCat.value;
+    const keyword = filterQ.value.toLowerCase();
+    const matchesQuery = !keyword
+      || plugin.name.toLowerCase().includes(keyword)
+      || (plugin.description || '').toLowerCase().includes(keyword);
+    return matchesCategory && matchesQuery;
+  })
+));
+
+const activePlugin = computed<PluginManifest | null>(
+  () => plugins.available.find((plugin) => plugin.id === activeId.value) || null,
+);
+
+watch(activePlugin, async (plugin) => {
+  if (!plugin || plugin.category !== 'theme' || !plugin.themes) {
+    previewTheme.value = null;
+    return;
+  }
+
+  try {
+    const { themeId } = await plugins.getActiveThemeId();
+    selectedThemeId.value = themeId || plugin.themes[0]?.id || null;
+  } catch {
+    selectedThemeId.value = plugin.themes[0]?.id || null;
+  }
+
+  previewTheme.value = plugin.themes.find((theme) => theme.id === selectedThemeId.value) || plugin.themes[0] || null;
+});
+
+function onSwatchClick(theme: ThemeDefinition) {
+  selectedThemeId.value = theme.id;
+  previewTheme.value = theme;
+  plugins.previewTheme(theme.vars);
+}
+
+function cardStyle(vars: ThemeVars): CSSProperties {
   return {
     background: vars['--surface'],
     border: `1px solid ${vars['--faint']}`,
@@ -150,29 +200,49 @@ function cardStyle(vars) {
     flexDirection: 'column',
     gap: '8px',
     maxWidth: '280px',
-  }
+  };
 }
 
 async function install() {
-  saving.value = true
-  try { await plugins.install(activeId.value) } catch(e) { console.error(e) }
-  saving.value = false
+  if (!activeId.value) {
+    return;
+  }
+
+  saving.value = true;
+  try {
+    await plugins.install(activeId.value);
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function uninstall() {
-  saving.value = true
-  try { await plugins.uninstall(activeId.value) } catch(e) { console.error(e) }
-  saving.value = false
+  if (!activeId.value) {
+    return;
+  }
+
+  saving.value = true;
+  try {
+    await plugins.uninstall(activeId.value);
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function applyTheme() {
-  if (!selectedThemeId.value) return
-  saving.value = true
-  try { await plugins.saveTheme(selectedThemeId.value) } catch(e) { console.error(e) }
-  saving.value = false
+  if (!selectedThemeId.value) {
+    return;
+  }
+
+  saving.value = true;
+  try {
+    await plugins.saveTheme(selectedThemeId.value);
+  } finally {
+    saving.value = false;
+  }
 }
 
 onMounted(async () => {
-  await Promise.all([plugins.loadAvailable(), plugins.loadInstalled()])
-})
+  await Promise.all([plugins.loadAvailable(), plugins.loadInstalled()]);
+});
 </script>

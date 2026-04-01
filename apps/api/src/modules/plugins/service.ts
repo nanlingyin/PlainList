@@ -64,7 +64,9 @@ export async function listInstalledPlugins(userId: number): Promise<InstalledPlu
 
   try {
     const parsed = JSON.parse(value) as InstalledPlugin[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((plugin) => Boolean(findPluginManifest(plugin.id)))
+      : [];
   } catch {
     return [];
   }

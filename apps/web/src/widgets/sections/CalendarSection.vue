@@ -8,91 +8,97 @@
       </div>
     </div>
 
-    <!-- 12-month grid -->
     <div class="cal-grid">
-      <div v-for="m in 12" :key="m" class="cal-month">
-        <div class="cal-month-name">{{ MONTHS_S[m - 1] }}</div>
+      <div v-for="monthIndex in 12" :key="monthIndex" class="cal-month">
+        <div class="cal-month-name">{{ MONTHS_S[monthIndex - 1] }}</div>
         <div class="cal-weekdays">
-          <div v-for="wd in WDAYS_S" :key="wd" class="cal-wd">{{ wd }}</div>
+          <div v-for="weekday in WDAYS_S" :key="weekday" class="cal-wd">{{ weekday }}</div>
         </div>
         <div class="cal-days-grid">
           <div
-            v-for="_ in firstDay(m - 1)"
-            :key="'e' + _"
+            v-for="emptyDay in firstDay(monthIndex - 1)"
+            :key="`empty-${monthIndex}-${emptyDay}`"
             class="cal-day empty"
           />
-          <div
-            v-for="d in daysInMonth(m - 1)"
-            :key="d"
-            class="cal-day"
-            :class="dayClass(m - 1, d)"
-            :title="dayTitle(m - 1, d)"
-            @click="openMonthDetail(m - 1)"
+          <button
+            v-for="day in daysInMonth(monthIndex - 1)"
+            :key="day"
+            class="cal-day clickable"
+            :class="dayClass(monthIndex - 1, day)"
+            :title="dayTitle(monthIndex - 1, day)"
+            type="button"
+            @click="openDayPopover(monthIndex - 1, day, $event)"
           />
         </div>
       </div>
     </div>
 
-    <!-- Heatmap per habit -->
     <div class="heatmap-section">
-      <div
-        v-for="habit in habits"
-        :key="habit.id"
-        class="heatmap-row"
-      >
+      <div v-for="habit in habits" :key="habit.id" class="heatmap-row">
         <div class="heatmap-row-label">
-          {{ habit.name.length > 14 ? habit.name.slice(0, 13) + '…' : habit.name }}
+          {{ habit.name.length > 14 ? `${habit.name.slice(0, 13)}…` : habit.name }}
         </div>
         <div class="heatmap-cells">
           <div
-            v-for="w in 52"
-            :key="w"
+            v-for="week in 52"
+            :key="week"
             class="hm-cell"
-            :class="heatmapLevel(habit.id, w - 1)"
+            :class="heatmapLevel(habit.id, week - 1)"
           />
         </div>
       </div>
     </div>
 
-    <!-- Month Detail View -->
     <Teleport to="body">
-      <div v-if="monthDetailOpen" class="month-detail-overlay" @click.self="closeMonthDetail">
-        <div class="month-detail-container">
-          <div class="mdv-header">
-            <h2 class="mdv-title">{{ MONTHS[selectedMonth] }} {{ year }}</h2>
-            <button class="mdv-close" @click="closeMonthDetail">×</button>
-          </div>
-
-          <!-- Treemap-style grid: tightly packed, no gaps -->
-          <div class="mdv-treemap" ref="treemapContainer">
-            <div
-              v-for="(day, index) in activeDaysInMonth(selectedMonth)"
-              :key="day.date"
-              class="mdv-tree-day"
-              :class="{ today: day.isToday }"
-              :style="treemapDayStyle(day, index)"
-            >
-              <div class="mdv-tree-date-badge">{{ day.date }}</div>
-              <div class="mdv-tree-tasks-area">
-                <div
-                  v-for="(task, taskIndex) in day.tasks"
-                  :key="task.id"
-                  class="mdv-tree-task"
-                  :style="taskTileStyle(day, taskIndex)"
-                >
-                  <span class="mdv-task-text" :data-fit="`${day.date}-${taskIndex}`">{{ task.name }}</span>
+      <Transition name="day-popover-fade">
+        <div
+          v-if="dayPopoverOpen && dayPopover"
+          class="day-popover-overlay"
+          @click="closeDayPopover"
+        >
+          <div
+            class="day-popover"
+            :style="popoverStyle"
+            @click.stop
+          >
+            <div class="day-popover-head">
+              <div>
+                <div class="day-popover-date">{{ dayPopover.title }}</div>
+                <div class="day-popover-meta">
+                  {{ dayPopover.completed }} / {{ dayPopover.total }} {{ t('tracker.done_col', 'Done') }}
                 </div>
               </div>
+              <button class="day-popover-close" type="button" @click="closeDayPopover">x</button>
+            </div>
+
+            <div v-if="dayPopover.tasks.length" class="day-popover-list">
+              <div
+                v-for="task in dayPopover.tasks"
+                :key="task.id"
+                class="day-popover-item"
+              >
+                <span class="day-popover-bullet" :class="task.type"></span>
+                <div class="day-popover-copy">
+                  <div class="day-popover-name">{{ task.name }}</div>
+                  <div class="day-popover-type">
+                    {{ task.type === 'habit' ? t('plan.type.habit', 'daily habit') : t('plan.type.todo', 'task') }}
+                  </div>
+                </div>
+                <div class="day-popover-time">{{ task.time }}</div>
+              </div>
+            </div>
+            <div v-else class="day-popover-empty">
+              {{ t('tracker.empty', 'No completed items for this day') }}
             </div>
           </div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
   </section>
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { usePlansStore } from '@/features/plans/model/usePlansStore'
 import { useChecksStore } from '@/features/checks/model/useChecksStore'
 import { useI18nStore } from '@/shared/i18n/useI18nStore'
@@ -104,8 +110,9 @@ const i18n = useI18nStore()
 const year = ref(new Date().getFullYear())
 const today = new Date()
 
-const monthDetailOpen = ref(false)
-const selectedMonth = ref(0)
+const dayPopoverOpen = ref(false)
+const dayPopover = ref(null)
+const popoverStyle = ref({})
 
 const MONTHS_S_DEFAULT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const MONTHS_DEFAULT = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -117,36 +124,38 @@ const WDAYS_S  = computed(() => i18n.L('WDAYS_S', WDAYS_S_DEFAULT))
 
 const habits = computed(() => plansStore.plans.filter(p => p.type === 'habit'))
 
-function firstDay(m) {
-  return new Date(year.value, m, 1).getDay()
+function t(key, fallback, params) {
+  return i18n.t(key, fallback, params)
 }
 
-function daysInMonth(m) {
-  return new Date(year.value, m + 1, 0).getDate()
+function firstDay(month) {
+  return new Date(year.value, month, 1).getDay()
 }
 
-function dateKey(m, d) {
-  const mm = String(m + 1).padStart(2, '0')
-  const dd = String(d).padStart(2, '0')
+function daysInMonth(month) {
+  return new Date(year.value, month + 1, 0).getDate()
+}
+
+function dateKey(month, day) {
+  const mm = String(month + 1).padStart(2, '0')
+  const dd = String(day).padStart(2, '0')
   return `${year.value}-${mm}-${dd}`
 }
 
-function pctForDay(m, d) {
-  const key = dateKey(m, d)
+function completedTasksForDay(month, day) {
+  const key = dateKey(month, day)
+  return plansStore.plans.filter((plan) => checksStore.isChecked(plan.id, key))
+}
+
+function pctForDay(month, day) {
   const all = plansStore.plans
   if (!all.length) return null
-  const done = all.filter(p => checksStore.isChecked(p.id, key)).length
+  const done = completedTasksForDay(month, day).length
   return Math.round((done / all.length) * 100)
 }
 
-function completedCount(m, d) {
-  const key = dateKey(m, d)
-  return plansStore.plans.filter(p => checksStore.isChecked(p.id, key)).length
-}
-
-function isFutureDay(m, d) {
-  const date = new Date(year.value, m, d)
-  return date > today
+function isFutureDay(month, day) {
+  return new Date(year.value, month, day) > today
 }
 
 function pctClass(pct) {
@@ -158,417 +167,90 @@ function pctClass(pct) {
   return 'pct-0'
 }
 
-function dayClass(m, d) {
-  const date = new Date(year.value, m, d)
+function dayClass(month, day) {
+  const date = new Date(year.value, month, day)
   const isToday =
     today.getFullYear() === year.value &&
-    today.getMonth() === m &&
-    today.getDate() === d
+    today.getMonth() === month &&
+    today.getDate() === day
   const isFuture = date > today
-  const pct = isFuture ? null : pctForDay(m, d)
+  const pct = isFuture ? null : pctForDay(month, day)
   return [
     pctClass(pct),
-    isToday  ? 'today'  : '',
+    isToday ? 'today' : '',
     isFuture ? 'future' : '',
-    'clickable'
   ]
 }
 
-function dayTitle(m, d) {
-  const date = new Date(year.value, m, d)
-  const isFuture = date > today
-  const pct = isFuture ? null : pctForDay(m, d)
-  return `${MONTHS_S.value[m]} ${d}: ${pct === null ? 'upcoming' : pct + '%'}`
+function dayTitle(month, day) {
+  const isFuture = isFutureDay(month, day)
+  const pct = isFuture ? null : pctForDay(month, day)
+  return `${MONTHS_S.value[month]} ${day}: ${pct === null ? 'upcoming' : `${pct}%`}`
 }
 
-function openMonthDetail(m) {
-  selectedMonth.value = m
-  monthDetailOpen.value = true
-}
-
-function closeMonthDetail() {
-  monthDetailOpen.value = false
-}
-
-// Auto-fit text: measure each span and scale to fill its tile
-function fitAllTaskTexts() {
-  nextTick(() => {
-    // Small delay to ensure layout is complete after animation
-    requestAnimationFrame(() => {
-      const spans = document.querySelectorAll('.mdv-task-text[data-fit]')
-      spans.forEach(span => {
-        // Reset any previous transform
-        span.style.transform = ''
-        span.style.fontSize = '14px'
-        span.style.whiteSpace = 'nowrap'
-
-        const tile = span.parentElement
-        if (!tile) return
-
-        const tileW = tile.clientWidth - 6 // minus padding
-        const tileH = tile.clientHeight - 6
-        if (tileW <= 0 || tileH <= 0) return
-
-        // Measure natural text size at base font
-        const textW = span.scrollWidth
-        const textH = span.scrollHeight
-        if (textW <= 0 || textH <= 0) return
-
-        // Scale to fill — allow both X and Y stretch independently
-        const scaleX = tileW / textW
-        const scaleY = tileH / textH
-
-        // Use the smaller scale to fit without overflow, then stretch the other axis
-        // But cap individual axis stretch to avoid extreme distortion (max 2.5x ratio)
-        let sx = scaleX
-        let sy = scaleY
-        const ratio = Math.max(sx, sy) / Math.min(sx, sy)
-        if (ratio > 2.5) {
-          // Limit distortion: use uniform scale + mild stretch
-          const uniform = Math.min(sx, sy)
-          sx = sx > sy ? uniform * 2.5 : uniform
-          sy = sy > sx ? uniform * 2.5 : uniform
-        }
-
-        span.style.transform = `scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`
-        span.style.transformOrigin = 'center center'
-      })
-    })
-  })
-}
-
-// Trigger fit when month detail opens
-watch(monthDetailOpen, (open) => {
-  if (open) fitAllTaskTexts()
-})
-
-// Get only days with completed tasks for artistic view
-function activeDaysInMonth(m) {
-  const days = []
-  const totalDays = daysInMonth(m)
-
-  for (let d = 1; d <= totalDays; d++) {
-    if (isFutureDay(m, d)) continue
-
-    const completed = completedCount(m, d)
-    if (completed === 0) continue // Skip days with no completed tasks
-
-    const key = dateKey(m, d)
-    const tasks = plansStore.plans
-      .filter(p => checksStore.isChecked(p.id, key))
-      .map(p => ({ id: p.id, name: p.name }))
-
-    const _date = new Date(year.value, m, d)
-    const isToday =
-      today.getFullYear() === year.value &&
-      today.getMonth() === m &&
-      today.getDate() === d
-
-    days.push({
-      date: d,
-      completed,
-      tasks,
-      isToday
-    })
-  }
-
-  return days
-}
-
-// Seeded pseudo-random for stable "randomness" per day
-function seededRand(seed) {
-  let x = Math.sin(seed * 9301 + 49297) * 49297
-  return x - Math.floor(x)
-}
-
-// Recursive binary-split treemap for day boxes in the month (七巧板 style)
-// Computes all day rects at once, then caches
-const _dayTileCache = { month: -1, year: -1, tiles: [] }
-
-function computeDayTiles(month) {
-  const allDays = activeDaysInMonth(month)
-  const n = allDays.length
-  if (n === 0) return []
-  if (n === 1) return [{ left: 0, top: 0, width: 100, height: 100 }]
-
-  // Weight per day: flatten the range so small days don't get crushed
-  const maxCompleted = Math.max(...allDays.map(d => d.completed))
-  const weights = allDays.map((d, i) => {
-    // Compress range: min 60% of max weight, so small days stay readable
-    const normalized = 0.6 + 0.4 * (d.completed / Math.max(maxCompleted, 1))
-    const jitter = 0.85 + seededRand(d.date * 41 + i * 17 + month * 7) * 0.3 // 0.85–1.15
-    return normalized * jitter
-  })
-
-  function splitRect(indices, x, y, w, h, depth) {
-    if (indices.length === 0) return []
-    if (indices.length === 1) {
-      return [{ idx: indices[0], left: x, top: y, width: w, height: h }]
-    }
-
-    const totalW = indices.reduce((s, i) => s + weights[i], 0)
-
-    // Alternate direction with randomness
-    const horizontal = (depth % 2 === 0) !== (seededRand(month * 5 + depth * 11 + indices.length) > 0.6)
-
-    // Split target: 35–65% of total weight
-    const splitTarget = totalW * (0.35 + seededRand(month * 19 + depth * 23 + indices[0] * 3) * 0.3)
-    let cumulative = 0
-    let splitAt = 1
-
-    for (let i = 0; i < indices.length - 1; i++) {
-      cumulative += weights[indices[i]]
-      if (cumulative >= splitTarget) {
-        splitAt = i + 1
-        break
-      }
-    }
-
-    const ratio = cumulative / totalW
-    const groupA = indices.slice(0, splitAt)
-    const groupB = indices.slice(splitAt)
-
-    if (horizontal) {
-      const wA = w * ratio
-      return [
-        ...splitRect(groupA, x, y, wA, h, depth + 1),
-        ...splitRect(groupB, x + wA, y, w - wA, h, depth + 1)
-      ]
-    } else {
-      const hA = h * ratio
-      return [
-        ...splitRect(groupA, x, y, w, hA, depth + 1),
-        ...splitRect(groupB, x, y + hA, w, h - hA, depth + 1)
-      ]
-    }
-  }
-
-  const indices = allDays.map((_, i) => i)
-  const rects = splitRect(indices, 0, 0, 100, 100, 0)
-  rects.sort((a, b) => a.idx - b.idx)
-  return rects.map(r => ({ left: r.left, top: r.top, width: r.width, height: r.height }))
-}
-
-function getDayTiles(month) {
-  if (_dayTileCache.month !== month || _dayTileCache.year !== year.value) {
-    _dayTileCache.month = month
-    _dayTileCache.year = year.value
-    _dayTileCache.tiles = computeDayTiles(month)
-  }
-  return _dayTileCache.tiles
-}
-
-function treemapDayStyle(day, index) {
-  const tiles = getDayTiles(selectedMonth.value)
-  const tile = tiles[index]
-  if (!tile) return {}
-
-  const gap = 3
-  const r1 = seededRand(day.date * 11 + 5)
-  const r2 = seededRand(day.date * 23 + 9)
-  const borderRadius = `${2 + Math.floor(r1 * 8)}px`
-  const bgOpacity = 3 + Math.floor(r2 * 5)
-
+function buildPopoverStyle(event) {
+  const target = event.currentTarget
+  if (!target) return {}
+  const rect = target.getBoundingClientRect()
+  const width = Math.min(360, window.innerWidth - 24)
+  const left = Math.min(Math.max(12, rect.left + rect.width / 2 - width / 2), window.innerWidth - width - 12)
+  const top = Math.min(rect.bottom + 14, window.innerHeight - 260)
   return {
-    position: 'absolute',
-    left: `calc(${tile.left}% + ${gap}px)`,
-    top: `calc(${tile.top}% + ${gap}px)`,
-    width: `calc(${tile.width}% - ${gap * 2}px)`,
-    height: `calc(${tile.height}% - ${gap * 2}px)`,
-    animationDelay: `${index * 50}ms`,
-    borderRadius,
-    background: `color-mix(in srgb, var(--dark) ${bgOpacity}%, var(--surface))`
+    left: `${left}px`,
+    top: `${Math.max(16, top)}px`,
+    width: `${width}px`,
   }
 }
 
-// Slice-and-dice treemap for tasks inside a day box (七巧板 style)
-// Returns an array of { left, top, width, height } rects in % for all tasks
-function computeTaskTiles(day) {
-  const tasks = day.tasks
-  const n = tasks.length
-  if (n === 0) return []
-  if (n === 1) return [{ left: 0, top: 0, width: 100, height: 100 }]
-
-  // Give each task a weight with seeded jitter so sizes vary
-  const weights = tasks.map((t, i) => {
-    const base = 1
-    const jitter = 0.5 + seededRand(day.date * 37 + i * 11) * 1.5 // 0.5–2.0
-    return base * jitter
-  })
-
-  // Recursive binary split
-  function splitRect(indices, x, y, w, h, depth) {
-    if (indices.length === 0) return []
-    if (indices.length === 1) {
-      return [{ idx: indices[0], left: x, top: y, width: w, height: h }]
-    }
-
-    const totalW = indices.reduce((s, i) => s + weights[i], 0)
-
-    // Alternate split direction, with jitter on the split point
-    const horizontal = (depth % 2 === 0) !== (seededRand(day.date * 3 + depth * 7) > 0.65)
-
-    // Find split point: roughly half the weight, with some randomness
-    let splitTarget = totalW * (0.35 + seededRand(day.date * 13 + depth * 19) * 0.3) // 35–65%
-    let cumulative = 0
-    let splitAt = 1
-
-    for (let i = 0; i < indices.length - 1; i++) {
-      cumulative += weights[indices[i]]
-      if (cumulative >= splitTarget) {
-        splitAt = i + 1
-        break
-      }
-    }
-
-    const ratio = cumulative / totalW
-    const groupA = indices.slice(0, splitAt)
-    const groupB = indices.slice(splitAt)
-
-    if (horizontal) {
-      // Split horizontally (left | right)
-      const wA = w * ratio
-      const wB = w - wA
-      return [
-        ...splitRect(groupA, x, y, wA, h, depth + 1),
-        ...splitRect(groupB, x + wA, y, wB, h, depth + 1)
-      ]
-    } else {
-      // Split vertically (top / bottom)
-      const hA = h * ratio
-      const hB = h - hA
-      return [
-        ...splitRect(groupA, x, y, w, hA, depth + 1),
-        ...splitRect(groupB, x, y + hA, w, hB, depth + 1)
-      ]
-    }
+function openDayPopover(month, day, event) {
+  const tasks = completedTasksForDay(month, day)
+  dayPopover.value = {
+    title: `${MONTHS.value[month]} ${day}, ${year.value}`,
+    completed: tasks.length,
+    total: plansStore.plans.length,
+    tasks: tasks.map((task) => ({
+      id: task.id,
+      name: task.name,
+      type: task.type,
+      time: task.time,
+    })),
   }
-
-  const indices = tasks.map((_, i) => i)
-  const rects = splitRect(indices, 0, 0, 100, 100, 0)
-
-  // Sort by idx to match task order
-  rects.sort((a, b) => a.idx - b.idx)
-  return rects.map(r => ({ left: r.left, top: r.top, width: r.width, height: r.height }))
+  popoverStyle.value = buildPopoverStyle(event)
+  dayPopoverOpen.value = true
 }
 
-// Cache computed tiles per day to avoid recalc per task
-const _tileCache = new Map()
-function getTilesForDay(day) {
-  const key = `${day.date}-${day.tasks.length}`
-  if (!_tileCache.has(key)) {
-    _tileCache.set(key, computeTaskTiles(day))
-  }
-  return _tileCache.get(key)
+function closeDayPopover() {
+  dayPopoverOpen.value = false
 }
 
-// Style for each task tile — absolute positioned, font fills the box
-function taskTileStyle(day, taskIndex) {
-  const tiles = getTilesForDay(day)
-  const tile = tiles[taskIndex]
-  if (!tile) return {}
-
-  const seed = day.date * 31 + taskIndex * 7
-  const gap = 2
-  const _textLen = day.tasks[taskIndex]?.name?.length || 1
-
-  // Aspect ratio of this tile
-  const aspect = tile.width / Math.max(tile.height, 0.1)
-
-  // Vertical text for tall narrow tiles (aspect < 0.6)
-  const isVertical = aspect < 0.55
-
-  // Font weight: heavier for bigger tiles
-  const area = tile.width * tile.height / 10000
-  const weightIdx = Math.min(4, Math.floor(Math.sqrt(area) * 4.5))
-  const weightOptions = [400, 500, 600, 700, 800]
-  const fontWeight = weightOptions[weightIdx]
-
-  const style = {
-    position: 'absolute',
-    left: `calc(${tile.left}% + ${gap}px)`,
-    top: `calc(${tile.top}% + ${gap}px)`,
-    width: `calc(${tile.width}% - ${gap * 2}px)`,
-    height: `calc(${tile.height}% - ${gap * 2}px)`,
-    fontWeight,
-    lineHeight: 1.05,
-    padding: '3px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    overflow: 'hidden',
-    borderRadius: `${2 + Math.floor(seededRand(seed + 3) * 6)}px`
-  }
-
-  if (isVertical) {
-    style.writingMode = 'vertical-rl'
-    style.textOrientation = 'mixed'
-  }
-
-  return style
-}
-
-function _monthDayClass(m, d) {
-  const date = new Date(year.value, m, d)
-  const isToday =
-    today.getFullYear() === year.value &&
-    today.getMonth() === m &&
-    today.getDate() === d
-  const isFuture = date > today
-  return [
-    isToday  ? 'today'  : '',
-    isFuture ? 'future' : '',
-  ]
-}
-
-function _monthDayStyle(m, d) {
-  if (isFutureDay(m, d)) return {}
-
-  const count = completedCount(m, d)
-  const allCounts = []
-  for (let day = 1; day <= daysInMonth(m); day++) {
-    if (!isFutureDay(m, day)) {
-      allCounts.push(completedCount(m, day))
-    }
-  }
-
-  const avgCount = allCounts.reduce((a, b) => a + b, 0) / allCounts.length
-
-  if (count >= avgCount * 1.5 && count >= 3) {
-    return { gridRow: 'span 2' }
-  }
-
-  return {}
-}
-
-// Heatmap: map week index → Mon date of that week in `year`
-function weekMonday(w) {
+function weekMonday(week) {
   const jan1 = new Date(year.value, 0, 1)
-  const d = new Date(jan1)
-  d.setDate(jan1.getDate() + w * 7)
-  return d
+  const date = new Date(jan1)
+  date.setDate(jan1.getDate() + week * 7)
+  return date
 }
 
-function heatmapLevel(habitId, w) {
-  const mon = weekMonday(w)
-  let done = 0, total = 0
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(mon)
-    d.setDate(mon.getDate() + i)
-    if (d > today) continue
-    if (d.getFullYear() !== year.value) continue
-    total++
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    if (checksStore.isChecked(habitId, `${year.value}-${mm}-${dd}`)) done++
+function heatmapLevel(habitId, week) {
+  const monday = weekMonday(week)
+  let done = 0
+  let total = 0
+  for (let offset = 0; offset < 7; offset += 1) {
+    const date = new Date(monday)
+    date.setDate(monday.getDate() + offset)
+    if (date > today) continue
+    if (date.getFullYear() !== year.value) continue
+    total += 1
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+    if (checksStore.isChecked(habitId, `${year.value}-${mm}-${dd}`)) done += 1
   }
+
   if (!total) return ''
   const ratio = done / total
   if (ratio >= 0.8) return 'lvl4'
   if (ratio >= 0.6) return 'lvl3'
   if (ratio >= 0.4) return 'lvl2'
-  if (ratio >  0)   return 'lvl1'
+  if (ratio > 0) return 'lvl1'
   return ''
 }
 </script>
@@ -582,14 +264,13 @@ function heatmapLevel(habitId, w) {
 .nav-btn:hover { background: var(--faint); }
 
 .cal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
-.cal-month { }
 .cal-month-name { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .4rem; color: var(--muted); }
 .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 2px; }
 .cal-wd { font-size: .6rem; text-align: center; color: var(--faint); }
 .cal-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.cal-day { aspect-ratio: 1; border-radius: 2px; background: var(--faint); }
-.cal-day.clickable { cursor: pointer; transition: transform .1s; }
-.cal-day.clickable:hover { transform: scale(1.2); z-index: 1; }
+.cal-day { aspect-ratio: 1; border-radius: 2px; background: var(--faint); border: none; }
+.cal-day.clickable { cursor: pointer; transition: transform .1s, box-shadow .15s, outline-color .15s; }
+.cal-day.clickable:hover { transform: scale(1.14); z-index: 1; box-shadow: 0 10px 22px rgba(17,17,17,.14); }
 .cal-day.empty { background: transparent; }
 .cal-day.future { background: var(--faint2); border: 1px dashed var(--faint); }
 .cal-day.today { outline: 2px solid var(--dark); outline-offset: 1px; }
@@ -609,185 +290,145 @@ function heatmapLevel(habitId, w) {
 .hm-cell.lvl3 { background: var(--mid); }
 .hm-cell.lvl4 { background: var(--dark); }
 
-/* Month Detail View */
-.month-detail-overlay {
+.day-popover-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--bg);
+  inset: 0;
   z-index: 9999;
-  overflow: hidden;
-  animation: fadeIn .4s cubic-bezier(.4, 0, .2, 1);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.month-detail-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.mdv-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 30px 40px;
-  background: var(--bg);
-  z-index: 10;
-  position: relative;
-}
-
-.mdv-title {
-  font-size: 42px;
-  font-weight: 700;
-  letter-spacing: -.03em;
-}
-
-.mdv-close {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+.day-popover {
+  position: fixed;
+  max-height: min(320px, calc(100vh - 32px));
+  padding: 16px;
   border: 1px solid var(--faint);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 20px 54px rgba(17,17,17,.12);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+
+.day-popover-fade-enter-active,
+.day-popover-fade-leave-active {
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.day-popover-fade-enter-from,
+.day-popover-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.day-popover-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.day-popover-date {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--dark);
+}
+
+.day-popover-meta {
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.day-popover-close {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--faint);
+  border-radius: 50%;
   background: var(--surface);
-  font-size: 24px;
   color: var(--mid);
   cursor: pointer;
-  transition: all .2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-family: var(--mono);
 }
 
-.mdv-close:hover {
+.day-popover-close:hover {
   background: var(--dark);
   color: var(--bg);
-  border-color: var(--dark);
-  transform: rotate(90deg);
 }
 
-/* Treemap container */
-.mdv-treemap {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  overflow: hidden;
-}
-
-.mdv-tree-day {
-  position: absolute;
-  border: 1.5px solid color-mix(in srgb, var(--dark) 8%, transparent);
-  padding: 0;
-  display: block;
-  transition: all .3s cubic-bezier(.4, 0, .2, 1);
-  opacity: 0;
-  animation: treeSlideIn .5s cubic-bezier(.4, 0, .2, 1) forwards;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-@keyframes treeSlideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.mdv-tree-day:hover {
-  z-index: 5;
-  box-shadow: 0 8px 32px rgba(0,0,0,.15);
-  transform: scale(1.02) !important;
-  border-color: var(--mid);
-}
-
-.mdv-tree-day.today {
-  background: var(--dark) !important;
-  color: var(--bg);
-  border-color: var(--dark);
-}
-
-.mdv-tree-day.today .mdv-tree-date-badge {
-  color: var(--bg);
-  background: color-mix(in srgb, var(--bg) 20%, transparent);
-}
-
-.mdv-tree-day.today .mdv-tree-task {
-  background: color-mix(in srgb, var(--bg) 15%, transparent);
-  color: var(--bg);
-}
-
-/* Date badge — floating top-left */
-.mdv-tree-date-badge {
-  position: absolute;
-  top: 6px;
-  left: 8px;
-  font-size: clamp(14px, 2.5vw, 32px);
-  font-weight: 800;
-  color: var(--dark);
-  line-height: 1;
-  letter-spacing: -.02em;
-  z-index: 2;
-  opacity: 0.25;
-  pointer-events: none;
-}
-
-/* Tasks area — fills the entire day box */
-.mdv-tree-tasks-area {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.mdv-tree-task {
-  color: var(--dark);
-  background: color-mix(in srgb, var(--dark) 6%, transparent);
-  transition: background .2s;
-  overflow: hidden;
-  padding: 3px;
+.day-popover-list {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 230px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.day-popover-item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--faint2);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
 }
 
-.mdv-tree-task:hover {
-  background: color-mix(in srgb, var(--dark) 16%, transparent);
-  z-index: 3;
+.day-popover-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
 }
 
-.mdv-task-text {
+.day-popover-bullet.habit { background: var(--dark); }
+.day-popover-bullet.todo { background: var(--mid); }
+
+.day-popover-copy {
+  min-width: 0;
+}
+
+.day-popover-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dark);
   white-space: nowrap;
-  word-break: keep-all;
-  overflow-wrap: normal;
-  line-height: 1;
-  font-size: 14px;
-  display: block;
-  will-change: transform;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Responsive adjustments */
+.day-popover-type {
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: .05em;
+}
+
+.day-popover-time {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: .05em;
+}
+
+.day-popover-empty {
+  padding: 18px 4px 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 @media (max-width: 768px) {
-  .mdv-header {
-    padding: 20px;
-  }
-
-  .mdv-title {
-    font-size: 28px;
-  }
-
-  .mdv-tree-day {
-    padding: 12px;
+  .cal-grid { grid-template-columns: repeat(2, 1fr); }
+  .day-popover {
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
   }
 }
 </style>

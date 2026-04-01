@@ -3,45 +3,49 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { usePluginsStore } from '@/features/plugins/model/usePluginsStore';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
-const _emit = defineEmits(['close']);
+const __VLS_emit = defineEmits(['close']);
 const plugins = usePluginsStore();
 const i18n = useI18nStore();
-function t(key, fallback) { return i18n.t(key, fallback); }
 const filterQ = ref('');
 const filterCat = ref('all');
 const activeId = ref(null);
 const selectedThemeId = ref(null);
 const previewTheme = ref(null);
 const saving = ref(false);
-const categories = computed(() => [
-    { key: 'all', label: t('plugins.tab.all', 'All') },
-    { key: 'theme', label: t('plugins.tab.theme', 'Theme') },
-    { key: 'language', label: t('plugins.tab.language', 'Language') },
-]);
-const filtered = computed(() => {
-    return plugins.available.filter(p => {
-        const matchCat = filterCat.value === 'all' || p.category === filterCat.value;
-        const q = filterQ.value.toLowerCase();
-        const matchQ = !q || p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q);
-        return matchCat && matchQ;
-    });
-});
-const activePlugin = computed(() => plugins.available.find(p => p.id === activeId.value) || null);
-// When switching to a new plugin, set selectedThemeId to active theme
-watch(activePlugin, async (p) => {
-    if (!p)
-        return;
-    if (p.category === 'theme' && p.themes) {
-        // Load the saved active theme id from server
-        try {
-            const { themeId } = await plugins.getActiveThemeId();
-            selectedThemeId.value = themeId || p.themes[0]?.id || null;
-        }
-        catch {
-            selectedThemeId.value = p.themes[0]?.id || null;
-        }
-        previewTheme.value = p.themes.find(t => t.id === selectedThemeId.value) || p.themes[0] || null;
+function t(key, fallback) {
+    return i18n.t(key, fallback);
+}
+const categories = computed(() => {
+    const base = [
+        { key: 'all', label: t('plugins.tab.all', 'All') },
+    ];
+    if (plugins.available.some((plugin) => plugin.category === 'theme')) {
+        base.push({ key: 'theme', label: t('plugins.tab.theme', 'Theme') });
     }
+    return base;
+});
+const filtered = computed(() => (plugins.available.filter((plugin) => {
+    const matchesCategory = filterCat.value === 'all' || plugin.category === filterCat.value;
+    const keyword = filterQ.value.toLowerCase();
+    const matchesQuery = !keyword
+        || plugin.name.toLowerCase().includes(keyword)
+        || (plugin.description || '').toLowerCase().includes(keyword);
+    return matchesCategory && matchesQuery;
+})));
+const activePlugin = computed(() => plugins.available.find((plugin) => plugin.id === activeId.value) || null);
+watch(activePlugin, async (plugin) => {
+    if (!plugin || plugin.category !== 'theme' || !plugin.themes) {
+        previewTheme.value = null;
+        return;
+    }
+    try {
+        const { themeId } = await plugins.getActiveThemeId();
+        selectedThemeId.value = themeId || plugin.themes[0]?.id || null;
+    }
+    catch {
+        selectedThemeId.value = plugin.themes[0]?.id || null;
+    }
+    previewTheme.value = plugin.themes.find((theme) => theme.id === selectedThemeId.value) || plugin.themes[0] || null;
 });
 function onSwatchClick(theme) {
     selectedThemeId.value = theme.id;
@@ -61,36 +65,40 @@ function cardStyle(vars) {
     };
 }
 async function install() {
+    if (!activeId.value) {
+        return;
+    }
     saving.value = true;
     try {
         await plugins.install(activeId.value);
     }
-    catch (e) {
-        console.error(e);
+    finally {
+        saving.value = false;
     }
-    saving.value = false;
 }
 async function uninstall() {
+    if (!activeId.value) {
+        return;
+    }
     saving.value = true;
     try {
         await plugins.uninstall(activeId.value);
     }
-    catch (e) {
-        console.error(e);
+    finally {
+        saving.value = false;
     }
-    saving.value = false;
 }
 async function applyTheme() {
-    if (!selectedThemeId.value)
+    if (!selectedThemeId.value) {
         return;
+    }
     saving.value = true;
     try {
         await plugins.saveTheme(selectedThemeId.value);
     }
-    catch (e) {
-        console.error(e);
+    finally {
+        saving.value = false;
     }
-    saving.value = false;
 }
 onMounted(async () => {
     await Promise.all([plugins.loadAvailable(), plugins.loadInstalled()]);
@@ -133,53 +141,53 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
 });
 __VLS_asFunctionalElement1(__VLS_intrinsics.input)({
     id: "pv-search",
-    placeholder: "Search plugins…",
+    placeholder: (__VLS_ctx.t('plugins.search', 'Search plugins')),
     autocomplete: "off",
 });
 (__VLS_ctx.filterQ);
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     id: "pv-tabs",
 });
-for (const [cat] of __VLS_vFor((__VLS_ctx.categories))) {
+for (const [category] of __VLS_vFor((__VLS_ctx.categories))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
         ...{ onClick: (...[$event]) => {
-                __VLS_ctx.filterCat = cat.key;
+                __VLS_ctx.filterCat = category.key;
                 // @ts-ignore
-                [filterQ, categories, filterCat,];
+                [t, filterQ, categories, filterCat,];
             } },
-        key: (cat.key),
-        ...{ class: (['pv-tab', __VLS_ctx.filterCat === cat.key ? 'active' : '']) },
+        key: (category.key),
+        ...{ class: (['pv-tab', __VLS_ctx.filterCat === category.key ? 'active' : '']) },
     });
     /** @type {__VLS_StyleScopedClasses['pv-tab']} */ ;
-    (cat.label);
+    (category.label);
     // @ts-ignore
     [filterCat,];
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     id: "pv-list",
 });
-for (const [p] of __VLS_vFor((__VLS_ctx.filtered))) {
+for (const [plugin] of __VLS_vFor((__VLS_ctx.filtered))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ onClick: (...[$event]) => {
-                __VLS_ctx.activeId = p.id;
+                __VLS_ctx.activeId = plugin.id;
                 // @ts-ignore
                 [filtered, activeId,];
             } },
-        key: (p.id),
-        ...{ class: (['pv-item', __VLS_ctx.activeId === p.id ? 'active' : '']) },
+        key: (plugin.id),
+        ...{ class: (['pv-item', __VLS_ctx.activeId === plugin.id ? 'active' : '']) },
     });
     /** @type {__VLS_StyleScopedClasses['pv-item']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "pv-item-name" },
     });
     /** @type {__VLS_StyleScopedClasses['pv-item-name']} */ ;
-    (p.name);
+    (plugin.name);
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "pv-item-desc" },
     });
     /** @type {__VLS_StyleScopedClasses['pv-item-desc']} */ ;
-    (p.description);
-    if (__VLS_ctx.plugins.installedIds.has(p.id)) {
+    (plugin.description);
+    if (__VLS_ctx.plugins.installedIds.has(plugin.id)) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
             ...{ class: "pv-item-badge" },
         });
@@ -193,6 +201,7 @@ if (!__VLS_ctx.filtered.length) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ style: {} },
     });
+    (__VLS_ctx.t('plugins.empty', 'No plugins found'));
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "pv-detail" },
@@ -203,6 +212,7 @@ if (!__VLS_ctx.activePlugin) {
         ...{ class: "pv-detail-empty" },
     });
     /** @type {__VLS_StyleScopedClasses['pv-detail-empty']} */ ;
+    (__VLS_ctx.t('plugins.select', 'Select a plugin'));
 }
 else {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
@@ -230,6 +240,7 @@ else {
             ...{ class: "pv-section-label" },
         });
         /** @type {__VLS_StyleScopedClasses['pv-section-label']} */ ;
+        (__VLS_ctx.t('plugins.themes', 'Themes'));
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
             ...{ class: "pv-theme-grid" },
         });
@@ -243,7 +254,7 @@ else {
                             return;
                         __VLS_ctx.onSwatchClick(theme);
                         // @ts-ignore
-                        [filtered, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, onSwatchClick,];
+                        [t, t, t, filtered, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, onSwatchClick,];
                     } },
                 key: (theme.id),
                 ...{ class: (['pv-swatch', __VLS_ctx.selectedThemeId === theme.id ? 'active' : '']) },
@@ -253,10 +264,10 @@ else {
                 ...{ class: "pv-swatch-colors" },
             });
             /** @type {__VLS_StyleScopedClasses['pv-swatch-colors']} */ ;
-            for (const [v] of __VLS_vFor((['--bg', '--surface', '--dark', '--mid', '--muted']))) {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    key: (v),
-                    ...{ style: ({ background: theme.vars[v] }) },
+            for (const [colorKey] of __VLS_vFor((['--bg', '--surface', '--dark', '--mid', '--muted']))) {
+                __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
+                    key: (colorKey),
+                    ...{ style: ({ background: theme.vars[colorKey] }) },
                 });
                 // @ts-ignore
                 [selectedThemeId,];
@@ -288,39 +299,25 @@ else {
                 ...{ style: ({ color: __VLS_ctx.previewTheme.vars['--dark'] }) },
             });
             /** @type {__VLS_StyleScopedClasses['pv-card-title']} */ ;
+            (__VLS_ctx.t('plugins.preview', 'Preview'));
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
                 ...{ class: "pv-card-body" },
                 ...{ style: ({ color: __VLS_ctx.previewTheme.vars['--mid'] }) },
             });
             /** @type {__VLS_StyleScopedClasses['pv-card-body']} */ ;
+            (__VLS_ctx.t('plugins.preview_text', 'Sample text in this theme'));
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
                 ...{ class: "pv-card-muted" },
                 ...{ style: ({ color: __VLS_ctx.previewTheme.vars['--muted'] }) },
             });
             /** @type {__VLS_StyleScopedClasses['pv-card-muted']} */ ;
+            (__VLS_ctx.t('plugins.preview_muted', 'Muted text'));
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
                 ...{ class: "pv-card-tag" },
                 ...{ style: ({ background: __VLS_ctx.previewTheme.vars['--faint'], color: __VLS_ctx.previewTheme.vars['--muted'] }) },
             });
             /** @type {__VLS_StyleScopedClasses['pv-card-tag']} */ ;
-        }
-    }
-    else if (__VLS_ctx.activePlugin.category === 'language' && __VLS_ctx.activePlugin.features) {
-        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-            ...{ class: "pv-section-label" },
-        });
-        /** @type {__VLS_StyleScopedClasses['pv-section-label']} */ ;
-        __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
-            ...{ class: "pv-feature-list" },
-        });
-        /** @type {__VLS_StyleScopedClasses['pv-feature-list']} */ ;
-        for (const [f] of __VLS_vFor((__VLS_ctx.activePlugin.features))) {
-            __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
-                key: (f),
-            });
-            (f);
-            // @ts-ignore
-            [activePlugin, activePlugin, activePlugin, previewTheme, previewTheme, previewTheme, previewTheme, previewTheme, previewTheme, previewTheme, cardStyle,];
+            (__VLS_ctx.t('plugins.preview_tag', 'tag'));
         }
     }
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
@@ -335,13 +332,7 @@ else {
                 disabled: (__VLS_ctx.saving),
             });
             /** @type {__VLS_StyleScopedClasses['pv-btn']} */ ;
-        }
-        else {
-            __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
-                ...{ class: "pv-btn" },
-                disabled: true,
-            });
-            /** @type {__VLS_StyleScopedClasses['pv-btn']} */ ;
+            (__VLS_ctx.t('plugins.apply', 'Apply'));
         }
         __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
             ...{ onClick: (__VLS_ctx.uninstall) },
@@ -368,7 +359,7 @@ else {
     (__VLS_ctx.t('plugins.restart_hint', 'Changes take effect after re-login'));
 }
 // @ts-ignore
-[t, t, t, plugins, activePlugin, activePlugin, applyTheme, saving, saving, saving, uninstall, install,];
+[t, t, t, t, t, t, t, t, plugins, activePlugin, activePlugin, previewTheme, previewTheme, previewTheme, previewTheme, previewTheme, previewTheme, previewTheme, cardStyle, applyTheme, saving, saving, saving, uninstall, install,];
 const __VLS_export = (await import('vue')).defineComponent({
     emits: {},
 });

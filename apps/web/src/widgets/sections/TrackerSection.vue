@@ -1,5 +1,5 @@
 <template>
-  <div class="tracker-section">
+  <section class="tracker-section">
     <!-- Navigation -->
     <div class="s3-nav">
       <button class="s3-btn" @click="prevMonth">&#8249;</button>
@@ -44,7 +44,7 @@
                     <br />
                     <span
                       class="col-day-num"
-                      :style="{ color: dateKey(cell.year, cell.month, cell.day) === tKey ? '#333' : '#ccc', fontSize: '8px' }"
+                      :style="{ color: dateKey(cell.year, cell.month, cell.day) === tKey ? 'var(--dark)' : 'var(--muted)', fontSize: '8px' }"
                     >{{ cell.day }}</span>
                   </template>
                 </th>
@@ -102,7 +102,7 @@
         </div>
       </div>
     </template>
-  </div>
+  </section>
 </template>
 
 <script setup>

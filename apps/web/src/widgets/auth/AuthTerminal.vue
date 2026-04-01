@@ -1,5 +1,31 @@
 <template>
   <div id="auth-terminal" @click="focusInput">
+    <div class="term-shortcuts" @click.stop>
+      <div class="term-shortcuts-top">
+        <div class="term-shortcuts-label">{{ t('auth.quick_access', '// quick access') }}</div>
+        <button
+          class="term-locale-btn"
+          type="button"
+          :title="t('nav.language', 'Language')"
+          @click="localeStore.toggleLocale()"
+        >
+          {{ localeStore.switchLabel }}
+        </button>
+      </div>
+      <div class="term-shortcuts-actions">
+        <button class="term-shortcut-btn" type="button" @click="triggerShortcut('login')">
+          <span class="term-shortcut-title">{{ t('auth.action.login', 'Login') }}</span>
+          <span class="term-shortcut-cmd">pl cd</span>
+        </button>
+        <button class="term-shortcut-btn" type="button" @click="triggerShortcut('register')">
+          <span class="term-shortcut-title">{{ t('auth.action.register', 'Register') }}</span>
+          <span class="term-shortcut-cmd">pl new</span>
+        </button>
+      </div>
+      <div class="term-shortcuts-subtitle">
+        {{ helperCaption }}
+      </div>
+    </div>
     <div id="term-body">
       <div
         v-for="(line, index) in lines"
@@ -17,7 +43,7 @@
           autocomplete="off"
           :spellcheck="false"
           @keydown="onKeyDown"
-        />
+        >
       </div>
     </div>
   </div>
@@ -25,9 +51,11 @@
 
 <script setup lang="ts">
 import type { AuthAccount, AuthSuccessResponse } from '@plainlist/shared';
-import { nextTick, onMounted, ref } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
+import { useLocaleStore } from '@/features/locale/model/useLocaleStore';
 import { useApi } from '@/shared/api/useApi';
+import { useI18nStore } from '@/shared/i18n/useI18nStore';
 
 type TerminalState = null | 'passphrase' | 'new-name' | 'new-pass' | 'onboard-name' | 'onboard-pass';
 type LineType = '' | 'out' | 'ok' | 'err';
@@ -42,6 +70,8 @@ const emit = defineEmits<{
 }>();
 
 const auth = useAuthStore();
+const localeStore = useLocaleStore();
+const i18n = useI18nStore();
 const { get, post } = useApi();
 
 const inputEl = ref<HTMLInputElement | null>(null);
@@ -54,6 +84,15 @@ const closing = ref(false);
 const history = ref<string[]>([]);
 const historyIndex = ref(-1);
 const isPasswordState = ref(false);
+const helperCaption = ref('');
+
+function t(key: string, fallback: string, params?: Record<string, string | number>) {
+  return i18n.t(key, fallback, params);
+}
+
+function setHelper(key: string, fallback: string, params?: Record<string, string | number>) {
+  helperCaption.value = t(key, fallback, params);
+}
 
 function print(text = '', type: LineType = '') {
   lines.value.push({ text, type });
@@ -84,24 +123,26 @@ function welcomeLines(): TerminalLine[] {
     { text: ' |  __/| | (_| | | | | | |___| \\__ \\ |_ ', type: '' },
     { text: ' |_|   |_|\\__,_|_|_| |_|_____|_|___/\\__|', type: '' },
     { text: '', type: '' },
-    { text: '  welcome to PlainList.', type: 'out' },
-    { text: '  commands:', type: 'out' },
-    { text: '    pl cd <name>    log in to an account', type: 'out' },
-    { text: '    pl new <name>   create an account', type: 'out' },
-    { text: '    pl ls           list accounts', type: 'out' },
-    { text: '    pl onboard      guided setup', type: 'out' },
-    { text: '    /help           show help', type: 'out' },
-    { text: '    /clear          clear terminal', type: 'out' },
+    { text: t('auth.welcome', '  welcome to PlainList.'), type: 'out' },
+    { text: t('auth.commands', '  commands:'), type: 'out' },
+    { text: t('auth.command.login', '    pl cd <name>    log in to an account'), type: 'out' },
+    { text: t('auth.command.register', '    pl new <name>   create an account'), type: 'out' },
+    { text: t('auth.command.list', '    pl ls           list accounts'), type: 'out' },
+    { text: t('auth.command.onboard', '    pl onboard      guided setup'), type: 'out' },
+    { text: t('auth.command.help', '    /help           show help'), type: 'out' },
+    { text: t('auth.command.clear', '    /clear          clear terminal'), type: 'out' },
     { text: '', type: '' },
   ];
 }
 
 function showWelcome() {
   lines.value = [];
-  welcomeLines().forEach((line, index) => {
+  setHelper('auth.helper.default', 'stay in the terminal, but start with a guided command.');
+  const nextLines = welcomeLines();
+  nextLines.forEach((line, index) => {
     window.setTimeout(() => {
       print(line.text, line.type);
-      if (index === welcomeLines().length - 1) {
+      if (index === nextLines.length - 1) {
         nextTick(() => focusInput());
       }
     }, index * 20);
@@ -122,11 +163,18 @@ function resetState() {
   pendingUser.value = null;
   pendingName.value = null;
   setPasswordMode(false);
+  setHelper('auth.helper.default', 'stay in the terminal, but start with a guided command.');
 }
 
 function startPasswordPrompt(nextState: Extract<TerminalState, 'passphrase' | 'new-pass' | 'onboard-pass'>) {
   state.value = nextState;
   setPasswordMode(true);
+  setHelper(
+    nextState === 'passphrase' ? 'auth.helper.passphrase' : 'auth.helper.passphrase_new',
+    nextState === 'passphrase'
+      ? 'enter the passphrase and press Enter.'
+      : 'choose a passphrase with at least 3 characters.',
+  );
 }
 
 function isValidUsername(value: string) {
@@ -136,7 +184,7 @@ function isValidUsername(value: string) {
 async function completeAuth(response: AuthSuccessResponse, username: string, messageLines: string[]) {
   auth.setAuth(response.token, username, response.isAdmin);
   messageLines.forEach((line) => print(line, 'ok'));
-  print('  opening dashboard...', 'out');
+  print(t('auth.opening', '  opening dashboard...'), 'out');
   closing.value = true;
   resetState();
   emit('login');
@@ -153,10 +201,12 @@ async function handlePassphrase(value: string) {
       username: pendingUser.value,
       password: value,
     });
-    await completeAuth(response, pendingUser.value, [`  welcome back, ${pendingUser.value}.`]);
+    await completeAuth(response, pendingUser.value, [
+      t('auth.login_success', '  welcome back, {username}.', { username: pendingUser.value }),
+    ]);
   } catch {
-    print('  incorrect passphrase.', 'err');
-    print('  try again or type pl cd <name>.', 'out');
+    print(t('auth.passphrase_wrong', '  incorrect passphrase.'), 'err');
+    print(t('auth.passphrase_retry', '  try again or type pl cd <name>.'), 'out');
     resetState();
   }
 }
@@ -164,19 +214,19 @@ async function handlePassphrase(value: string) {
 async function handleNameEntry(value: string, onboard = false) {
   const normalized = value.toLowerCase();
   if (!isValidUsername(normalized)) {
-    print('  usernames must be 2-20 chars using letters, numbers, _, ., or -.', 'err');
+    print(t('auth.username_invalid', '  usernames must be 2-20 chars using letters, numbers, _, ., or -.'), 'err');
     return;
   }
 
   const accounts = await listAccounts();
   if (accounts.some((account) => account.username === normalized)) {
-    print(`  "${normalized}" is already taken.`, 'err');
+    print(t('auth.username_taken', '  "{username}" is already taken.', { username: normalized }), 'err');
     return;
   }
 
   pendingName.value = normalized;
   startPasswordPrompt(onboard ? 'onboard-pass' : 'new-pass');
-  print('  set a passphrase (at least 3 chars):', 'out');
+  print(t('auth.set_passphrase', '  set a passphrase (at least 3 chars):'), 'out');
 }
 
 async function handleRegistration(value: string, onboard = false) {
@@ -186,7 +236,7 @@ async function handleRegistration(value: string, onboard = false) {
   }
 
   if (value.length < 3) {
-    print('  passphrase must be at least 3 characters.', 'err');
+    print(t('auth.passphrase_short', '  passphrase must be at least 3 characters.'), 'err');
     return;
   }
 
@@ -195,14 +245,52 @@ async function handleRegistration(value: string, onboard = false) {
       username: pendingName.value,
       password: value,
     });
+
     const successLines = onboard
-      ? [`  all set, ${pendingName.value}.`, '  head to the Day section to add your first habit or task.']
-      : [`  account created. welcome, ${pendingName.value}.`];
+      ? [
+          t('auth.onboard_success', '  all set, {username}.', { username: pendingName.value }),
+          t('auth.onboard_next', '  head to the Day section to add your first habit or task.'),
+        ]
+      : [t('auth.register_success', '  account created. welcome, {username}.', { username: pendingName.value })];
+
     await completeAuth(response, pendingName.value, successLines);
   } catch (error) {
-    print(`  ${error instanceof Error ? error.message : 'registration failed.'}`, 'err');
+    print(
+      `  ${error instanceof Error ? error.message : t('auth.registration_failed', 'registration failed.')}`,
+      'err',
+    );
     resetState();
   }
+}
+
+async function triggerShortcut(mode: 'login' | 'register') {
+  resetState();
+  focusInput();
+
+  if (mode === 'login') {
+    const accounts = await listAccounts();
+    inputValue.value = 'pl cd ';
+    setHelper('auth.helper.login', 'type an existing username after pl cd, then press Enter.');
+    print(t('auth.quick_login', '  quick login armed. finish the command after "pl cd".'), 'out');
+    if (accounts.length > 0) {
+      print(
+        t('auth.quick_login_available', '  available: {accounts}', {
+          accounts: accounts.map((account) => account.username).join(', '),
+        }),
+        'out',
+      );
+    } else {
+      print(t('auth.quick_login_empty', '  no accounts found yet. you can switch to Register instead.'), 'out');
+    }
+  } else {
+    inputValue.value = 'pl new ';
+    setHelper('auth.helper.register', 'type a new username after pl new, then press Enter.');
+    print(t('auth.quick_register', '  quick register armed. finish the command after "pl new".'), 'out');
+    print(t('auth.quick_register_next', '  you will be guided to choose a passphrase next.'), 'out');
+  }
+
+  await nextTick();
+  inputEl.value?.setSelectionRange(inputValue.value.length, inputValue.value.length);
 }
 
 async function executeCommand(value: string) {
@@ -232,7 +320,7 @@ async function executeCommand(value: string) {
   }
 
   if (value === '/help' || value === 'help') {
-    print('  commands: pl cd, pl new, pl ls, pl onboard, /clear', 'out');
+    print(t('auth.help_short', '  commands: pl cd, pl new, pl ls, pl onboard, /clear'), 'out');
     return;
   }
 
@@ -242,8 +330,8 @@ async function executeCommand(value: string) {
   }
 
   if (!value.startsWith('pl ') && value !== 'pl') {
-    print(`  unknown command: ${value}`, 'err');
-    print('  type /help for available commands.', 'out');
+    print(t('auth.unknown_command', '  unknown command: {value}', { value }), 'err');
+    print(t('auth.help_hint', '  type /help for available commands.'), 'out');
     return;
   }
 
@@ -251,32 +339,52 @@ async function executeCommand(value: string) {
 
   if (sub === 'ls') {
     const accounts = await listAccounts();
-    print(accounts.length ? `  accounts: ${accounts.map((account) => account.username).join(', ')}` : '  no accounts yet.', 'out');
+    if (accounts.length > 0) {
+      print(
+        t('auth.accounts', '  accounts: {accounts}', {
+          accounts: accounts.map((account) => account.username).join(', '),
+        }),
+        'out',
+      );
+    } else {
+      print(t('auth.no_accounts', '  no accounts yet.'), 'out');
+    }
     return;
   }
 
   if (sub === 'onboard') {
     state.value = 'onboard-name';
-    print("  let's get you set up. choose a username:", 'out');
+    setHelper('auth.helper.onboard', 'choose a username to begin onboarding.');
+    print(t('auth.username_onboard', "  let's get you set up. choose a username:"), 'out');
     return;
   }
 
   if (sub === 'cd') {
     const accounts = await listAccounts();
     if (!arg) {
-      print(accounts.length ? `  accounts: ${accounts.map((account) => account.username).join(', ')}` : '  no accounts yet.', 'out');
-      print('  usage: pl cd <name>', 'out');
+      setHelper('auth.helper.login', 'type an existing username after pl cd, then press Enter.');
+      if (accounts.length > 0) {
+        print(
+          t('auth.accounts', '  accounts: {accounts}', {
+            accounts: accounts.map((account) => account.username).join(', '),
+          }),
+          'out',
+        );
+      } else {
+        print(t('auth.no_accounts', '  no accounts yet.'), 'out');
+      }
+      print(t('auth.usage_login', '  usage: pl cd <name>'), 'out');
       return;
     }
 
     if (!accounts.some((account) => account.username === arg)) {
-      print(`  account "${arg}" not found. try pl ls.`, 'err');
+      print(t('auth.account_not_found', '  account "{username}" not found.', { username: arg }), 'err');
       return;
     }
 
     pendingUser.value = arg;
     startPasswordPrompt('passphrase');
-    print(`  passphrase for ${arg}:`, 'out');
+    print(t('auth.passphrase_prompt', '  passphrase for {username}:', { username: arg }), 'out');
     return;
   }
 
@@ -287,17 +395,18 @@ async function executeCommand(value: string) {
     }
 
     state.value = 'new-name';
-    print('  choose a username:', 'out');
+    setHelper('auth.helper.register', 'type a new username after pl new, then press Enter.');
+    print(t('auth.username_prompt', '  choose a username:'), 'out');
     return;
   }
 
   if (sub === 'graphic') {
-    print('  graphical mode is not available in this build.', 'out');
+    print(t('auth.graphic_unavailable', '  graphical mode is not available in this build.'), 'out');
     return;
   }
 
-  print(`  unknown subcommand: pl ${sub}`, 'err');
-  print('  type /help for available commands.', 'out');
+  print(t('auth.unknown_subcommand', '  unknown subcommand: pl {value}', { value: sub }), 'err');
+  print(t('auth.help_hint', '  type /help for available commands.'), 'out');
 }
 
 async function onKeyDown(event: KeyboardEvent) {
@@ -341,6 +450,17 @@ async function onKeyDown(event: KeyboardEvent) {
   await executeCommand(value);
   nextTick(scrollToBottom);
 }
+
+watch(
+  () => localeStore.locale,
+  () => {
+    if (!history.value.length && state.value === null) {
+      showWelcome();
+      return;
+    }
+    setHelper('auth.helper.default', 'stay in the terminal, but start with a guided command.');
+  },
+);
 
 onMounted(() => {
   showWelcome();

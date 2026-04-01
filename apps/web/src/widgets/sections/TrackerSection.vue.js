@@ -155,7 +155,7 @@ const __VLS_ctx = {
 let __VLS_components;
 let __VLS_intrinsics;
 let __VLS_directives;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+__VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "tracker-section" },
 });
 /** @type {__VLS_StyleScopedClasses['tracker-section']} */ ;
@@ -260,7 +260,7 @@ else {
                 __VLS_asFunctionalElement1(__VLS_intrinsics.br)({});
                 __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
                     ...{ class: "col-day-num" },
-                    ...{ style: ({ color: __VLS_ctx.dateKey(cell.year, cell.month, cell.day) === __VLS_ctx.tKey ? '#333' : '#ccc', fontSize: '8px' }) },
+                    ...{ style: ({ color: __VLS_ctx.dateKey(cell.year, cell.month, cell.day) === __VLS_ctx.tKey ? 'var(--dark)' : 'var(--muted)', fontSize: '8px' }) },
                 });
                 /** @type {__VLS_StyleScopedClasses['col-day-num']} */ ;
                 (cell.day);

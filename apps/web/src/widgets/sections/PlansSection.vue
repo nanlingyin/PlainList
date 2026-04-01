@@ -1,5 +1,5 @@
 <template>
-  <div class="plans-section">
+  <section class="plans-section">
     <div class="plan-list">
       <div v-if="!plans.plans.length" class="empty-state">
         <div class="empty-state-icon">○</div>
@@ -87,9 +87,9 @@
         <span class="stat-val">{{ pct }}%</span>
         <span class="stat-lbl">{{ t('stat.completion', 'complete') }}</span>
       </div>
-      <div ref="chartEl" style="width:120px;height:20px;"></div>
+      <div ref="chartEl" class="stat-chart"></div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup>
@@ -236,6 +236,9 @@ let chartInst = null
 function renderChart() {
   if (!chartEl.value) return
   if (!chartInst) chartInst = echarts.init(chartEl.value, null, { renderer: 'svg' })
+  const styles = getComputedStyle(document.documentElement)
+  const dark = styles.getPropertyValue('--dark').trim() || '#111111'
+  const faint = styles.getPropertyValue('--faint').trim() || '#E4E4E4'
   const done   = doneCount.value
   const remain = remainCount.value
   const total  = done + remain || 1
@@ -245,8 +248,8 @@ function renderChart() {
     xAxis: { type: 'value', max: total, show: false },
     yAxis: { type: 'category', show: false, data: [''] },
     series: [
-      { name: 'Done',   type: 'bar', stack: 't', data: [done],   itemStyle: { color: '#1A1A1A', borderRadius: [4,0,0,4] }, barMaxWidth: 12 },
-      { name: 'Remain', type: 'bar', stack: 't', data: [remain], itemStyle: { color: '#E8E8E8', borderRadius: [0,4,4,0] } }
+      { name: 'Done',   type: 'bar', stack: 't', data: [done],   itemStyle: { color: dark, borderRadius: [4,0,0,4] }, barMaxWidth: 12 },
+      { name: 'Remain', type: 'bar', stack: 't', data: [remain], itemStyle: { color: faint, borderRadius: [0,4,4,0] } }
     ]
   })
 }

@@ -130,6 +130,9 @@ function renderChart() {
         return;
     if (!chartInst)
         chartInst = echarts.init(chartEl.value, null, { renderer: 'svg' });
+    const styles = getComputedStyle(document.documentElement);
+    const dark = styles.getPropertyValue('--dark').trim() || '#111111';
+    const faint = styles.getPropertyValue('--faint').trim() || '#E4E4E4';
     const done = doneCount.value;
     const remain = remainCount.value;
     const total = done + remain || 1;
@@ -139,8 +142,8 @@ function renderChart() {
         xAxis: { type: 'value', max: total, show: false },
         yAxis: { type: 'category', show: false, data: [''] },
         series: [
-            { name: 'Done', type: 'bar', stack: 't', data: [done], itemStyle: { color: '#1A1A1A', borderRadius: [4, 0, 0, 4] }, barMaxWidth: 12 },
-            { name: 'Remain', type: 'bar', stack: 't', data: [remain], itemStyle: { color: '#E8E8E8', borderRadius: [0, 4, 4, 0] } }
+            { name: 'Done', type: 'bar', stack: 't', data: [done], itemStyle: { color: dark, borderRadius: [4, 0, 0, 4] }, barMaxWidth: 12 },
+            { name: 'Remain', type: 'bar', stack: 't', data: [remain], itemStyle: { color: faint, borderRadius: [0, 4, 4, 0] } }
         ]
     });
 }
@@ -160,7 +163,7 @@ const __VLS_ctx = {
 let __VLS_components;
 let __VLS_intrinsics;
 let __VLS_directives;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+__VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "plans-section" },
 });
 /** @type {__VLS_StyleScopedClasses['plans-section']} */ ;
@@ -467,8 +470,9 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
 (__VLS_ctx.t('stat.completion', 'complete'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ref: "chartEl",
-    ...{ style: {} },
+    ...{ class: "stat-chart" },
 });
+/** @type {__VLS_StyleScopedClasses['stat-chart']} */ ;
 // @ts-ignore
 [t, t, t, doneCount, remainCount, pct,];
 const __VLS_export = (await import('vue')).defineComponent({});
