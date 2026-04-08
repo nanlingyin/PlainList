@@ -7,16 +7,13 @@ import { useI18nStore } from '@/shared/i18n/useI18nStore';
 const plans = usePlansStore();
 const checks = useChecksStore();
 const i18n = useI18nStore();
-function t(key, fallback) { return i18n.t(key, fallback); }
-// ── state ─────────────────────────────────────────────────────────────────────
+function t(key, fallback, params) { return i18n.t(key, fallback, params); }
 const now = new Date();
 const trackerYear = ref(now.getFullYear());
 const trackerMonth = ref(now.getMonth());
-// ── constants ─────────────────────────────────────────────────────────────────
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const MONTHS_S = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const WDAYS_M = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-// ── helpers ───────────────────────────────────────────────────────────────────
+const MONTHS_DEFAULT = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS_SHORT_DEFAULT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WDAYS_M_DEFAULT = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 function todayKey() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -26,119 +23,127 @@ function dateKey(year, month, day) {
 }
 function isFuture(cell) {
     const cellDate = new Date(cell.year, cell.month, cell.day);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return cellDate > today;
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    return cellDate > todayDate;
 }
 function getMonthWeeks(year, month) {
     const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
     const daysInMon = new Date(year, month + 1, 0).getDate();
-    const weeks = [];
+    const result = [];
     let day = 1 - firstDow;
     while (day <= daysInMon) {
         const week = [];
-        for (let wd = 0; wd < 7; wd++) {
+        for (let wd = 0; wd < 7; wd += 1) {
             week.push((day >= 1 && day <= daysInMon) ? { year, month, day } : null);
-            day++;
+            day += 1;
         }
-        weeks.push(week);
+        result.push(week);
     }
-    return weeks;
+    return result;
 }
-// ── computed ──────────────────────────────────────────────────────────────────
+const monthNames = computed(() => i18n.L('MONTHS', MONTHS_DEFAULT));
+const monthNamesShort = computed(() => i18n.L('MONTHS_S', MONTHS_SHORT_DEFAULT));
+const weekDayHeaders = computed(() => i18n.L('WDAYS_M', WDAYS_M_DEFAULT));
 const tKey = computed(() => todayKey());
 const weeks = computed(() => getMonthWeeks(trackerYear.value, trackerMonth.value));
-const monthLabel = computed(() => `${MONTHS[trackerMonth.value]} ${trackerYear.value}`);
-const shortMonthLabel = computed(() => `${MONTHS_S[trackerMonth.value]} ${trackerYear.value}`);
+const monthLabel = computed(() => (i18n.locale === 'zh-CN'
+    ? `${trackerYear.value}年${trackerMonth.value + 1}月`
+    : `${monthNames.value[trackerMonth.value]} ${trackerYear.value}`));
+const shortMonthLabel = computed(() => (i18n.locale === 'zh-CN'
+    ? `${trackerYear.value}年${trackerMonth.value + 1}月`
+    : `${monthNamesShort.value[trackerMonth.value]} ${trackerYear.value}`));
 const groups = computed(() => [
-    { label: t('tracker.group.habits', 'Habits · daily recurring'), items: plans.plans.filter(p => p.type === 'habit') },
-    { label: t('tracker.group.tasks', 'Tasks · one-time items'), items: plans.plans.filter(p => p.type === 'todo') },
+    { label: t('tracker.group.habits', 'Habits · daily recurring'), items: plans.plans.filter((plan) => plan.type === 'habit') },
+    { label: t('tracker.group.tasks', 'Tasks · one-time items'), items: plans.plans.filter((plan) => plan.type === 'todo') },
 ]);
 function weekHasToday(wk) {
-    const tk = tKey.value;
-    return wk.some(c => c && dateKey(c.year, c.month, c.day) === tk);
+    const key = tKey.value;
+    return wk.some((cell) => cell && dateKey(cell.year, cell.month, cell.day) === key);
 }
 function daysElapsed() {
-    const t = new Date();
-    const y = trackerYear.value;
-    const m = trackerMonth.value;
-    if (t.getFullYear() === y && t.getMonth() === m)
-        return t.getDate();
-    return new Date(y, m + 1, 0).getDate();
+    const todayDate = new Date();
+    const year = trackerYear.value;
+    const month = trackerMonth.value;
+    if (todayDate.getFullYear() === year && todayDate.getMonth() === month)
+        return todayDate.getDate();
+    return new Date(year, month + 1, 0).getDate();
 }
 function planPct(plan) {
     const elapsed = daysElapsed();
     let done = 0;
-    for (let d = 1; d <= elapsed; d++) {
-        if (checks.isChecked(plan.id, dateKey(trackerYear.value, trackerMonth.value, d)))
-            done++;
+    for (let day = 1; day <= elapsed; day += 1) {
+        if (checks.isChecked(plan.id, dateKey(trackerYear.value, trackerMonth.value, day)))
+            done += 1;
     }
-    return elapsed ? Math.round(done / elapsed * 100) + '%' : '—';
+    return elapsed ? `${Math.round(done / elapsed * 100)}%` : '—';
 }
 const summary = computed(() => {
-    const y = trackerYear.value;
-    const m = trackerMonth.value;
+    const year = trackerYear.value;
+    const month = trackerMonth.value;
     const elapsed = daysElapsed();
     const allPlans = plans.plans;
-    let tot = 0, don = 0, perf = 0;
-    for (let d = 1; d <= elapsed; d++) {
-        const k = dateKey(y, m, d);
+    let totalChecks = 0;
+    let doneChecks = 0;
+    let perfectDays = 0;
+    for (let day = 1; day <= elapsed; day += 1) {
+        const key = dateKey(year, month, day);
         let allDone = allPlans.length > 0;
-        allPlans.forEach(p => {
-            if (checks.isChecked(p.id, k))
-                don++;
+        allPlans.forEach((plan) => {
+            if (checks.isChecked(plan.id, key))
+                doneChecks += 1;
             else
                 allDone = false;
-            tot++;
+            totalChecks += 1;
         });
         if (allDone)
-            perf++;
+            perfectDays += 1;
     }
-    let bestHabit = allPlans[0] || null;
+    let bestPlan = allPlans[0] || null;
     let bestPct = 0;
-    allPlans.forEach(p => {
-        let c = 0;
-        for (let d = 1; d <= elapsed; d++) {
-            if (checks.isChecked(p.id, dateKey(y, m, d)))
-                c++;
+    allPlans.forEach((plan) => {
+        let count = 0;
+        for (let day = 1; day <= elapsed; day += 1) {
+            if (checks.isChecked(plan.id, dateKey(year, month, day)))
+                count += 1;
         }
-        const pp = elapsed ? Math.round(c / elapsed * 100) : 0;
-        if (pp > bestPct) {
-            bestPct = pp;
-            bestHabit = p;
+        const pct = elapsed ? Math.round(count / elapsed * 100) : 0;
+        if (pct > bestPct) {
+            bestPct = pct;
+            bestPlan = plan;
         }
     });
     return [
-        { val: tot ? Math.round(don / tot * 100) + '%' : '—', lbl: t('year.summary.completion', 'Month Completion') },
-        { val: `${don}/${tot}`, lbl: t('year.summary.total', 'Checks Done') },
-        { val: perf, lbl: t('year.summary.perfect', 'Perfect Days') },
+        { val: totalChecks ? `${Math.round(doneChecks / totalChecks * 100)}%` : '—', lbl: t('year.summary.completion', 'Month Completion') },
+        { val: `${doneChecks}/${totalChecks}`, lbl: t('year.summary.total', 'Checks Done') },
+        { val: perfectDays, lbl: t('year.summary.perfect', 'Perfect Days') },
         {
-            val: bestHabit ? bestPct + '%' : '—',
-            lbl: bestHabit ? bestHabit.name.split(' ').slice(0, 2).join(' ') + ' · best' : t('year.summary.best', 'Best Habit')
+            val: bestPlan ? `${bestPct}%` : '—',
+            lbl: bestPlan
+                ? t('tracker.best_suffix', '{name} · best', { name: bestPlan.name.split(' ').slice(0, 2).join(' ') })
+                : t('year.summary.best', 'Best Habit'),
         },
     ];
 });
-// ── navigation ────────────────────────────────────────────────────────────────
 function prevMonth() {
-    trackerMonth.value--;
+    trackerMonth.value -= 1;
     if (trackerMonth.value < 0) {
         trackerMonth.value = 11;
-        trackerYear.value--;
+        trackerYear.value -= 1;
     }
 }
 function nextMonth() {
-    trackerMonth.value++;
+    trackerMonth.value += 1;
     if (trackerMonth.value > 11) {
         trackerMonth.value = 0;
-        trackerYear.value++;
+        trackerYear.value += 1;
     }
 }
 function goToday() {
-    const d = new Date();
-    trackerYear.value = d.getFullYear();
-    trackerMonth.value = d.getMonth();
+    const date = new Date();
+    trackerYear.value = date.getFullYear();
+    trackerMonth.value = date.getMonth();
 }
-// ── data loading ──────────────────────────────────────────────────────────────
 async function loadMonth() {
     await checks.fetchMonth(trackerYear.value, trackerMonth.value);
 }
@@ -255,7 +260,7 @@ else {
                 ...{ class: "col-day-wd" },
             });
             /** @type {__VLS_StyleScopedClasses['col-day-wd']} */ ;
-            (__VLS_ctx.WDAYS_M[wd]);
+            (__VLS_ctx.weekDayHeaders[wd]);
             if (cell) {
                 __VLS_asFunctionalElement1(__VLS_intrinsics.br)({});
                 __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
@@ -266,7 +271,7 @@ else {
                 (cell.day);
             }
             // @ts-ignore
-            [weeks, shortMonthLabel, dateKey, dateKey, tKey, tKey, WDAYS_M,];
+            [weeks, shortMonthLabel, dateKey, dateKey, tKey, tKey, weekDayHeaders,];
         }
         // @ts-ignore
         [];
@@ -325,7 +330,7 @@ else {
                             ...{ class: ([
                                     wd === 6 && wi !== __VLS_ctx.weeks.length - 1 ? 'tc-week-sep' : '',
                                     !cell ? 'tc-empty' : '',
-                                    cell && __VLS_ctx.dateKey(cell.year, cell.month, cell.day) === __VLS_ctx.tKey ? 'tc-today-col' : ''
+                                    cell && __VLS_ctx.dateKey(cell.year, cell.month, cell.day) === __VLS_ctx.tKey ? 'tc-today-col' : '',
                                 ]) },
                         });
                         /** @type {__VLS_StyleScopedClasses['td-check']} */ ;

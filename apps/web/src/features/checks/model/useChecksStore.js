@@ -1,9 +1,11 @@
 import { getMonthRange } from '@plainlist/shared';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { useAiReviewStore } from '@/features/ai-review/model/useAiReviewStore';
 import { useApi } from '@/shared/api/useApi';
 export const useChecksStore = defineStore('checks', () => {
     const { get, put } = useApi();
+    const aiReview = useAiReviewStore();
     const checks = ref({});
     async function fetchRange(from, to) {
         const rows = await get(`/checks?from=${from}&to=${to}`);
@@ -31,6 +33,7 @@ export const useChecksStore = defineStore('checks', () => {
         checks.value[planKey][dateKey] = next;
         try {
             await put('/checks', { planId, date: dateKey, done: next });
+            aiReview.clear();
         }
         catch (error) {
             checks.value[planKey][dateKey] = current;
@@ -39,6 +42,7 @@ export const useChecksStore = defineStore('checks', () => {
     }
     function clear() {
         checks.value = {};
+        aiReview.clear();
     }
     return {
         checks,

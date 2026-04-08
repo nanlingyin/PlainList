@@ -22,6 +22,10 @@ const envSchema = z.object({
   DB_PASS: z.string().default(''),
   DB_NAME: z.string().default('plainlist'),
   JWT_SECRET: z.string().default('change-me-in-production'),
+  AI_REVIEW_BASE_URL: z.string().url().default('https://api.siliconflow.cn/v1'),
+  AI_REVIEW_API_KEY: z.string().default(''),
+  AI_REVIEW_MODEL: z.string().default('deepseek-ai/DeepSeek-V3.1-Terminus'),
+  AI_REVIEW_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
 });
 
 export const env = envSchema.parse(process.env);

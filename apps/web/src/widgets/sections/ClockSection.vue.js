@@ -3,9 +3,9 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 const i18n = useI18nStore();
-function t(key, fallback) { return i18n.t(key, fallback); }
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function t(key, fallback, params) { return i18n.t(key, fallback, params); }
+const DAYS_DEFAULT = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS_DEFAULT = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 function pad(n) { return String(n).padStart(2, '0'); }
 function ordinal(n) {
     const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
@@ -26,15 +26,35 @@ const dayOfMonth = computed(() => now.value.getDate());
 const daysInMonth = computed(() => new Date(now.value.getFullYear(), now.value.getMonth() + 1, 0).getDate());
 const monthPct = computed(() => Math.round(dayOfMonth.value / daysInMonth.value * 100));
 const dayPct = computed(() => {
-    const s = now.value.getHours() * 3600 + now.value.getMinutes() * 60 + now.value.getSeconds();
-    return Math.round(s / 86400 * 100);
+    const seconds = now.value.getHours() * 3600 + now.value.getMinutes() * 60 + now.value.getSeconds();
+    return Math.round(seconds / 86400 * 100);
 });
+const days = computed(() => i18n.L('DAYS', DAYS_DEFAULT));
+const months = computed(() => i18n.L('MONTHS', MONTHS_DEFAULT));
 const dateStr = computed(() => {
-    const days = i18n.L('DAYS', DAYS);
-    const months = i18n.L('MONTHS', MONTHS);
-    return days[now.value.getDay()] + ', ' + months[now.value.getMonth()] + ' ' + ordinal(now.value.getDate()) + ', ' + now.value.getFullYear();
+    if (i18n.locale === 'zh-CN') {
+        return `${now.value.getFullYear()}年${now.value.getMonth() + 1}月${now.value.getDate()}日 ${days.value[now.value.getDay()]}`;
+    }
+    return `${days.value[now.value.getDay()]}, ${months.value[now.value.getMonth()]} ${ordinal(now.value.getDate())}, ${now.value.getFullYear()}`;
 });
-onMounted(() => { timer = setInterval(() => { now.value = new Date(); }, 1000); });
+const weekDayLabel = computed(() => t('clock.week_day', 'Week {week} · Day {day}', {
+    week: weekNum.value,
+    day: dayOfYear.value,
+}));
+const yearProgressLabel = computed(() => t('prog.days_elapsed', '{current} / {total} days', {
+    current: dayOfYear.value,
+    total: daysInYear.value,
+}));
+const monthProgressLabel = computed(() => t('prog.days_elapsed', '{current} / {total} days', {
+    current: dayOfMonth.value,
+    total: daysInMonth.value,
+}));
+const dayProgressLabel = computed(() => t('prog.time_elapsed', '{time} / 24:00', {
+    time: `${pad(now.value.getHours())}:${pad(now.value.getMinutes())}`,
+}));
+onMounted(() => {
+    timer = setInterval(() => { now.value = new Date(); }, 1000);
+});
 onUnmounted(() => clearInterval(timer));
 const __VLS_ctx = {
     ...{},
@@ -79,8 +99,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     id: "clock-week",
 });
-(__VLS_ctx.weekNum);
-(__VLS_ctx.dayOfYear);
+(__VLS_ctx.weekDayLabel);
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "clock-motto" },
 });
@@ -95,6 +114,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 });
 /** @type {__VLS_StyleScopedClasses['sec-tag']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+(__VLS_ctx.t('section.progress', 'Progress'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-item" },
 });
@@ -118,8 +138,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-sub" },
 });
 /** @type {__VLS_StyleScopedClasses['prog-sub']} */ ;
-(__VLS_ctx.dayOfYear);
-(__VLS_ctx.daysInYear);
+(__VLS_ctx.yearProgressLabel);
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-track" },
 });
@@ -140,7 +159,7 @@ for (const [i] of __VLS_vFor((10))) {
     });
     /** @type {__VLS_StyleScopedClasses['prog-dot']} */ ;
     // @ts-ignore
-    [t, t, t, hm, sec, dateStr, weekNum, dayOfYear, dayOfYear, yearPct, yearPct, yearPct, daysInYear,];
+    [t, t, t, t, hm, sec, dateStr, weekDayLabel, yearPct, yearPct, yearPct, yearProgressLabel,];
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-item" },
@@ -165,8 +184,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-sub" },
 });
 /** @type {__VLS_StyleScopedClasses['prog-sub']} */ ;
-(__VLS_ctx.dayOfMonth);
-(__VLS_ctx.daysInMonth);
+(__VLS_ctx.monthProgressLabel);
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-track" },
 });
@@ -187,7 +205,7 @@ for (const [i] of __VLS_vFor((__VLS_ctx.daysInMonth))) {
     });
     /** @type {__VLS_StyleScopedClasses['prog-dot']} */ ;
     // @ts-ignore
-    [t, monthPct, monthPct, dayOfMonth, dayOfMonth, daysInMonth, daysInMonth,];
+    [t, monthPct, monthPct, monthProgressLabel, daysInMonth, dayOfMonth,];
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-item" },
@@ -212,8 +230,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-sub" },
 });
 /** @type {__VLS_StyleScopedClasses['prog-sub']} */ ;
-(__VLS_ctx.pad(__VLS_ctx.now.getHours()));
-(__VLS_ctx.pad(__VLS_ctx.now.getMinutes()));
+(__VLS_ctx.dayProgressLabel);
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "prog-track" },
 });
@@ -234,7 +251,7 @@ for (const [i] of __VLS_vFor((24))) {
     });
     /** @type {__VLS_StyleScopedClasses['prog-dot']} */ ;
     // @ts-ignore
-    [t, dayPct, dayPct, dayPct, pad, pad, now, now,];
+    [t, dayPct, dayPct, dayPct, dayProgressLabel,];
 }
 // @ts-ignore
 [];

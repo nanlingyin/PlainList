@@ -61,11 +61,6 @@ export async function runDemoSeed(pool: Pool): Promise<void> {
       checks.push([planId, toDateKey(date), done]);
     }
 
-    const todayDone = ['Morning stretching', 'Read 30 min', 'Review email backlog', 'Design system tokens', 'Lunch walk (20 min)', 'Team sync call'].includes(name)
-      ? 1
-      : 0;
-    checks.push([planId, toDateKey(today), todayDone]);
-
     if (checks.length > 0) {
       const placeholders = checks.map(() => '(?, ?, ?)').join(', ');
       await pool.query(

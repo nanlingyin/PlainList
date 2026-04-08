@@ -1,61 +1,57 @@
 <template>
   <section id="s5" class="section">
-    <!-- Week header -->
     <div class="week-header">
       <span class="week-title">{{ t('week.prefix', 'Week') }} {{ pad(weekNumber) }}</span>
       <span class="week-range">{{ rangeLabel }}</span>
     </div>
 
-    <!-- 7 day cards -->
     <div class="week-days-row">
       <div
-        v-for="(day, i) in weekDays"
-        :key="i"
+        v-for="(day, index) in weekDays"
+        :key="index"
         class="week-day-card"
         :class="{ 'today-card': day.isToday }"
       >
         <div class="wdc-label">{{ day.label }}</div>
         <div class="wdc-date-num">{{ pad(day.date.getDate()) }}</div>
-        <div class="wdc-pct">{{ day.pct !== null ? day.pct + '%' : '—' }}</div>
+        <div class="wdc-pct">{{ day.pct !== null ? `${day.pct}%` : '—' }}</div>
         <div class="wdc-bar-track">
-          <div class="wdc-bar-fill" :style="{ width: (day.pct || 0) + '%' }" />
+          <div class="wdc-bar-fill" :style="{ width: `${day.pct || 0}%` }" />
         </div>
         <div class="wdc-tasks">
           {{ day.pct !== null
-            ? Math.round(totalPlans * (day.pct / 100)) + '/' + totalPlans
-            : 'upcoming' }}
+            ? `${Math.round(totalPlans * (day.pct / 100))}/${totalPlans}`
+            : t('week.upcoming', 'upcoming') }}
         </div>
       </div>
     </div>
 
-    <!-- Charts row -->
     <div class="charts-row">
-      <div ref="radarEl"   class="chart chart-radar" />
-      <div ref="barEl"     class="chart chart-bar" />
-      <div ref="lineEl"    class="chart chart-line" />
+      <div ref="radarEl" class="chart chart-radar" />
+      <div ref="barEl" class="chart chart-bar" />
+      <div ref="lineEl" class="chart chart-line" />
     </div>
 
-    <!-- Insight cards -->
     <div class="week-insight">
       <div class="insight-item">
         <div class="insight-val">{{ avg }}%</div>
         <div class="insight-label">{{ t('week.insight.avg', 'Avg Completion') }}</div>
-        <div class="insight-delta up">this week</div>
+        <div class="insight-delta up">{{ t('week.this_week', 'this week') }}</div>
       </div>
       <div class="insight-item">
         <div class="insight-val">{{ activeDays }}</div>
         <div class="insight-label">{{ t('week.insight.active', 'Active Days') }}</div>
-        <div class="insight-delta">{{ activeDays }}/7 tracked</div>
+        <div class="insight-delta">{{ t('week.tracked', '{count}/7 tracked', { count: activeDays }) }}</div>
       </div>
       <div class="insight-item">
         <div class="insight-val">{{ bestDay || '—' }}</div>
         <div class="insight-label">{{ t('week.insight.best_day', 'Best Day') }}</div>
-        <div class="insight-delta up">peak: {{ maxPct }}%</div>
+        <div class="insight-delta up">{{ t('week.peak', 'peak: {value}%', { value: maxPct }) }}</div>
       </div>
       <div class="insight-item">
-        <div class="insight-val">{{ streak }}d</div>
+        <div class="insight-val">{{ streak }}</div>
         <div class="insight-label">{{ t('week.insight.streak', 'Current Streak') }}</div>
-        <div class="insight-delta">days in a row</div>
+        <div class="insight-delta">{{ t('week.days_in_a_row', 'days in a row') }}</div>
       </div>
     </div>
   </section>
@@ -69,34 +65,35 @@ import { useChecksStore } from '@/features/checks/model/useChecksStore'
 import { usePluginsStore } from '@/features/plugins/model/usePluginsStore'
 import { useI18nStore } from '@/shared/i18n/useI18nStore'
 
-const plansStore   = usePlansStore()
-const checksStore  = useChecksStore()
+const plansStore = usePlansStore()
+const checksStore = useChecksStore()
 const pluginsStore = usePluginsStore()
-const i18n         = useI18nStore()
-function t(key, fallback) { return i18n.t(key, fallback) }
+const i18n = useI18nStore()
+function t(key, fallback, params) { return i18n.t(key, fallback, params) }
 
 const radarEl = ref(null)
-const barEl   = ref(null)
-const lineEl  = ref(null)
+const barEl = ref(null)
+const lineEl = ref(null)
 
 let chartRadar = null
-let chartBar   = null
-let chartLine  = null
+let chartBar = null
+let chartLine = null
 
-const DAYS_S   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const DAYS_S_DEFAULT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+const MONTHS_S_DEFAULT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
-function pad(n) { return String(n).padStart(2, '0') }
+function pad(value) { return String(value).padStart(2, '0') }
 
 const today = new Date()
+const dayNamesShort = computed(() => i18n.L('DAYS_S', DAYS_S_DEFAULT))
+const monthNamesShort = computed(() => i18n.L('MONTHS_S', MONTHS_S_DEFAULT))
 
-// Monday of current week
 const monday = computed(() => {
-  const d = new Date(today)
-  const dow = d.getDay()
-  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1))
-  d.setHours(0, 0, 0, 0)
-  return d
+  const date = new Date(today)
+  const dayOfWeek = date.getDay()
+  date.setDate(date.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+  date.setHours(0, 0, 0, 0)
+  return date
 })
 
 const weekNumber = computed(() => {
@@ -106,9 +103,14 @@ const weekNumber = computed(() => {
 })
 
 const rangeLabel = computed(() => {
-  const sun = new Date(monday.value)
-  sun.setDate(monday.value.getDate() + 6)
-  return `${MONTHS_S[monday.value.getMonth()]} ${monday.value.getDate()} – ${MONTHS_S[sun.getMonth()]} ${sun.getDate()}`
+  const sunday = new Date(monday.value)
+  sunday.setDate(monday.value.getDate() + 6)
+
+  if (i18n.locale === 'zh-CN') {
+    return `${monthNamesShort.value[monday.value.getMonth()]}${monday.value.getDate()}日 - ${monthNamesShort.value[sunday.getMonth()]}${sunday.getDate()}日`
+  }
+
+  return `${monthNamesShort.value[monday.value.getMonth()]} ${monday.value.getDate()} - ${monthNamesShort.value[sunday.getMonth()]} ${sunday.getDate()}`
 })
 
 const totalPlans = computed(() => plansStore.plans.length)
@@ -120,56 +122,54 @@ function pctForDate(date) {
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
   const key = `${date.getFullYear()}-${mm}-${dd}`
-  const done = all.filter(p => checksStore.isChecked(p.id, key)).length
+  const done = all.filter((plan) => checksStore.isChecked(plan.id, key)).length
   return Math.round((done / all.length) * 100)
 }
 
-const weekDays = computed(() => {
-  return Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(monday.value)
-    date.setDate(monday.value.getDate() + i)
-    const isToday = date.toDateString() === today.toDateString()
-    return {
-      date,
-      label: DAYS_S[date.getDay()].toUpperCase(),
-      isToday,
-      pct: pctForDate(date),
-    }
-  })
-})
+const weekDays = computed(() => Array.from({ length: 7 }, (_, index) => {
+  const date = new Date(monday.value)
+  date.setDate(monday.value.getDate() + index)
+  return {
+    date,
+    label: dayNamesShort.value[date.getDay()],
+    isToday: date.toDateString() === today.toDateString(),
+    pct: pctForDate(date),
+  }
+}))
 
-const pcts = computed(() => weekDays.value.map(d => d.pct))
-const dayLabels = computed(() => weekDays.value.map(d => d.label.slice(0, 3)))
-
-const validPcts = computed(() => pcts.value.filter(v => v !== null))
-const avg        = computed(() => validPcts.value.length ? Math.round(validPcts.value.reduce((a, b) => a + b, 0) / validPcts.value.length) : 0)
+const pcts = computed(() => weekDays.value.map((day) => day.pct))
+const dayLabels = computed(() => weekDays.value.map((day) => day.label))
+const validPcts = computed(() => pcts.value.filter((value) => value !== null))
+const avg = computed(() => validPcts.value.length ? Math.round(validPcts.value.reduce((left, right) => left + right, 0) / validPcts.value.length) : 0)
 const activeDays = computed(() => validPcts.value.length)
-const maxPct     = computed(() => validPcts.value.length ? Math.max(...validPcts.value) : 0)
-const bestDay    = computed(() => {
-  const idx = pcts.value.indexOf(maxPct.value)
-  return idx >= 0 ? dayLabels.value[idx] : '—'
+const maxPct = computed(() => validPcts.value.length ? Math.max(...validPcts.value) : 0)
+const bestDay = computed(() => {
+  if (!validPcts.value.length) return '—'
+  const index = pcts.value.indexOf(maxPct.value)
+  return index >= 0 ? dayLabels.value[index] : '—'
 })
 
 const streak = computed(() => {
-  let s = 0
-  const d = new Date(today)
-  while (s <= 365) {
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    const key = `${d.getFullYear()}-${mm}-${dd}`
+  let count = 0
+  const cursor = new Date(today)
+
+  while (count <= 365) {
+    const mm = String(cursor.getMonth() + 1).padStart(2, '0')
+    const dd = String(cursor.getDate()).padStart(2, '0')
+    const key = `${cursor.getFullYear()}-${mm}-${dd}`
     const all = plansStore.plans
     if (!all.length) break
-    const done = all.filter(p => checksStore.isChecked(p.id, key)).length
+    const done = all.filter((plan) => checksStore.isChecked(plan.id, key)).length
     if (done === 0) break
-    s++
-    d.setDate(d.getDate() - 1)
+    count += 1
+    cursor.setDate(cursor.getDate() - 1)
   }
-  return s
+
+  return count
 })
 
-const habits = computed(() => plansStore.plans.filter(p => p.type === 'habit'))
+const habits = computed(() => plansStore.plans.filter((plan) => plan.type === 'habit'))
 
-// Fake 3 prior weeks for line chart context
 const priorWeeks = [
   [65, 72, 68, 55, 80, 75, 70],
   [70, 60, 85, 78, 66, 80, 77],
@@ -182,13 +182,10 @@ function getCSSVar(name) {
 
 function buildRadarOption() {
   const indicators = habits.value.length
-    ? habits.value.map(habit => ({ name: habit.name.split(' ').slice(0, 2).join(' '), max: 100 }))
-    : [{ name: 'No habits', max: 100 }]
-  const values = habits.value.map(() => {
-    const done = validPcts.value.length ? avg.value : 0
-    return done
-  })
-  const dark  = getCSSVar('--dark')
+    ? habits.value.map((habit) => ({ name: habit.name.split(' ').slice(0, 2).join(' '), max: 100 }))
+    : [{ name: t('week.no_habits', 'No habits'), max: 100 }]
+  const values = habits.value.map(() => (validPcts.value.length ? avg.value : 0))
+  const dark = getCSSVar('--dark')
   const faint = getCSSVar('--faint')
   const muted = getCSSVar('--muted')
   return {
@@ -215,10 +212,10 @@ function buildRadarOption() {
 }
 
 function buildBarOption() {
-  const dark   = getCSSVar('--dark')
-  const mid    = getCSSVar('--mid')
-  const muted  = getCSSVar('--muted')
-  const faint  = getCSSVar('--faint')
+  const dark = getCSSVar('--dark')
+  const mid = getCSSVar('--mid')
+  const muted = getCSSVar('--muted')
+  const faint = getCSSVar('--faint')
   const faint2 = getCSSVar('--faint2')
   return {
     backgroundColor: 'transparent',
@@ -241,10 +238,10 @@ function buildBarOption() {
     series: [{
       type: 'bar',
       barMaxWidth: 20,
-      data: pcts.value.map(v => ({
-        value: v,
+      data: pcts.value.map((value) => ({
+        value,
         itemStyle: {
-          color: v === null ? faint2 : v >= 80 ? dark : v >= 60 ? mid : muted,
+          color: value === null ? faint2 : value >= 80 ? dark : value >= 60 ? mid : muted,
           borderRadius: [3, 3, 0, 0],
         },
       })),
@@ -253,19 +250,19 @@ function buildBarOption() {
 }
 
 function buildLineOption() {
-  const dark  = getCSSVar('--dark')
+  const dark = getCSSVar('--dark')
   const faint = getCSSVar('--faint')
   const muted = getCSSVar('--muted')
-  const currentData = pcts.value.map(v => v ?? 0)
-  const series = [...priorWeeks, currentData].map((d, i) => ({
+  const currentData = pcts.value.map((value) => value ?? 0)
+  const series = [...priorWeeks, currentData].map((data, index) => ({
     type: 'line',
     smooth: true,
-    data: d,
-    lineStyle: { color: i === 3 ? dark : faint, width: i === 3 ? 2 : 1 },
-    itemStyle: { color: i === 3 ? dark : faint },
-    symbol: i === 3 ? 'circle' : 'none',
+    data,
+    lineStyle: { color: index === 3 ? dark : faint, width: index === 3 ? 2 : 1 },
+    itemStyle: { color: index === 3 ? dark : faint },
+    symbol: index === 3 ? 'circle' : 'none',
     symbolSize: 4,
-    showSymbol: i === 3,
+    showSymbol: index === 3,
   }))
   return {
     backgroundColor: 'transparent',
@@ -316,16 +313,16 @@ watch(() => ({ ...pluginsStore.themeVars }), () => {
   chartLine?.setOption(buildLineOption(), true)
 }, { deep: true })
 
-onMounted(() => {
-  initCharts()
-  document.addEventListener('theme:changed', onThemeChanged)
-})
-
 function onThemeChanged() {
   chartRadar?.setOption(buildRadarOption(), true)
   chartBar?.setOption(buildBarOption(), true)
   chartLine?.setOption(buildLineOption(), true)
 }
+
+onMounted(() => {
+  initCharts()
+  document.addEventListener('theme:changed', onThemeChanged)
+})
 
 onBeforeUnmount(() => {
   document.removeEventListener('theme:changed', onThemeChanged)

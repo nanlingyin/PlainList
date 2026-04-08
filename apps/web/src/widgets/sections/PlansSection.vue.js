@@ -2,54 +2,85 @@
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import * as echarts from 'echarts';
+import { useAiReviewStore } from '@/features/ai-review/model/useAiReviewStore';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
+const aiReview = useAiReviewStore();
 const plans = usePlansStore();
 const checks = useChecksStore();
 const auth = useAuthStore();
 const i18n = useI18nStore();
-function t(key, fallback) { return i18n.t(key, fallback); }
-// ── helpers ───────────────────────────────────────────────────────────────────
+function t(key, fallback, params) { return i18n.t(key, fallback, params); }
+const REVIEW_PERIODS = ['day', 'week', 'month', 'year'];
+const MONTHS_DEFAULT = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 function todayKey() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
-function dateKey(y, m, d) {
-    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+function dateKey(year, month, day) {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
-const MONTH_NAMES = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-];
-// ── grouping ──────────────────────────────────────────────────────────────────
+const monthNames = computed(() => i18n.L('MONTHS', MONTHS_DEFAULT));
 const GROUPS = [
-    { key: 'group.morning_early', fallback: 'Morning · before 9:00', test: h => h < 9 },
-    { key: 'group.morning', fallback: 'Morning · 9:00–13:00', test: h => h < 13 },
-    { key: 'group.afternoon', fallback: 'Afternoon · 13:00–18:00', test: h => h < 18 },
+    { key: 'group.morning_early', fallback: 'Morning · before 9:00', test: (hour) => hour < 9 },
+    { key: 'group.morning', fallback: 'Morning · 9:00-13:00', test: (hour) => hour < 13 },
+    { key: 'group.afternoon', fallback: 'Afternoon · 13:00-18:00', test: (hour) => hour < 18 },
     { key: 'group.evening', fallback: 'Evening · after 18:00', test: () => true },
 ];
 const groupedPlans = computed(() => {
     const result = [];
     let lastKey = null;
-    for (const p of plans.plans) {
-        const hour = parseInt(p.time.split(':')[0]);
-        const g = GROUPS.find(g => g.test(hour));
-        if (g.key !== lastKey) {
-            result.push({ label: t(g.key, g.fallback), items: [] });
-            lastKey = g.key;
+    for (const plan of plans.plans) {
+        const hour = Number.parseInt(plan.time.split(':')[0], 10);
+        const group = GROUPS.find((item) => item.test(hour));
+        if (!group)
+            continue;
+        if (group.key !== lastKey) {
+            result.push({ label: t(group.key, group.fallback), items: [] });
+            lastKey = group.key;
         }
-        result[result.length - 1].items.push(p);
+        result[result.length - 1].items.push(plan);
     }
     return result;
 });
-const habitPlans = computed(() => plans.plans.filter(p => p.type === 'habit'));
-// ── toggle / delete ───────────────────────────────────────────────────────────
-function onRowClick(p) {
-    checks.toggle(p.id, todayKey());
+const habitPlans = computed(() => plans.plans.filter((plan) => plan.type === 'habit'));
+function onRowClick(plan) {
+    checks.toggle(plan.id, todayKey());
 }
-// ── add form ──────────────────────────────────────────────────────────────────
+function planTypeTag(type) {
+    return type === 'habit'
+        ? t('plan.type_tag.habit', 'habit')
+        : t('plan.type_tag.todo', 'task');
+}
+function periodLabel(period, full = false) {
+    const short = {
+        day: t('plan.ai.period.day', 'Day'),
+        week: t('plan.ai.period.week', 'Week'),
+        month: t('plan.ai.period.month', 'Month'),
+        year: t('plan.ai.period.year', 'Year'),
+    };
+    const long = {
+        day: t('plan.ai.period.day_full', 'Daily'),
+        week: t('plan.ai.period.week_full', 'Weekly'),
+        month: t('plan.ai.period.month_full', 'Monthly'),
+        year: t('plan.ai.period.year_full', 'Yearly'),
+    };
+    return full ? long[period] : short[period];
+}
+async function generateReview(period) {
+    try {
+        await aiReview.generate(period, todayKey());
+    }
+    catch { }
+}
+function formatGeneratedAt(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime()))
+        return value;
+    return date.toLocaleString(i18n.locale === 'zh-CN' ? 'zh-CN' : 'en-US');
+}
 const formOpen = ref(false);
 const newName = ref('');
 const newType = ref('habit');
@@ -76,53 +107,54 @@ async function submitPlan() {
     await plans.add(name, newType.value, time);
     cancelForm();
 }
-// ── month strip ───────────────────────────────────────────────────────────────
 const today = new Date();
 const stripYear = ref(today.getFullYear());
 const stripMonth = ref(today.getMonth());
-const monthLabel = computed(() => `${MONTH_NAMES[stripMonth.value]} ${stripYear.value}`);
+const monthLabel = computed(() => (i18n.locale === 'zh-CN'
+    ? `${stripYear.value}年${stripMonth.value + 1}月`
+    : `${monthNames.value[stripMonth.value]} ${stripYear.value}`));
 function prevMonth() {
     if (stripMonth.value === 0) {
         stripMonth.value = 11;
-        stripYear.value--;
+        stripYear.value -= 1;
     }
-    else
-        stripMonth.value--;
+    else {
+        stripMonth.value -= 1;
+    }
     checks.fetchMonth(stripYear.value, stripMonth.value + 1);
 }
 function nextMonth() {
     if (stripMonth.value === 11) {
         stripMonth.value = 0;
-        stripYear.value++;
+        stripYear.value += 1;
     }
-    else
-        stripMonth.value++;
+    else {
+        stripMonth.value += 1;
+    }
     checks.fetchMonth(stripYear.value, stripMonth.value + 1);
 }
 const daysInStrip = computed(() => {
-    const tNow = new Date();
-    const tY = tNow.getFullYear();
-    const tM = tNow.getMonth();
-    const tD = tNow.getDate();
-    const y = stripYear.value;
-    const m = stripMonth.value;
-    const count = new Date(y, m + 1, 0).getDate();
+    const nowDate = new Date();
+    const currentYear = nowDate.getFullYear();
+    const currentMonth = nowDate.getMonth();
+    const currentDay = nowDate.getDate();
+    const year = stripYear.value;
+    const month = stripMonth.value;
+    const count = new Date(year, month + 1, 0).getDate();
     const result = [];
-    for (let d = 1; d <= count; d++) {
-        const isToday = y === tY && m === tM && d === tD;
-        const isFuture = new Date(y, m, d) > tNow;
-        const k = dateKey(y, m, d);
-        const doneN = plans.plans.filter(p => checks.isChecked(p.id, k)).length;
-        const pct = plans.plans.length ? Math.round(doneN / plans.plans.length * 100) : 0;
-        result.push({ day: d, isToday, isFuture, key: k, pct });
+    for (let day = 1; day <= count; day += 1) {
+        const isToday = year === currentYear && month === currentMonth && day === currentDay;
+        const isFuture = new Date(year, month, day) > nowDate;
+        const key = dateKey(year, month, day);
+        const doneCountForDay = plans.plans.filter((plan) => checks.isChecked(plan.id, key)).length;
+        const completionPct = plans.plans.length ? Math.round(doneCountForDay / plans.plans.length * 100) : 0;
+        result.push({ day, isToday, isFuture, key, pct: completionPct });
     }
     return result;
 });
-// ── stats ─────────────────────────────────────────────────────────────────────
-const doneCount = computed(() => plans.plans.filter(p => checks.isChecked(p.id, todayKey())).length);
+const doneCount = computed(() => plans.plans.filter((plan) => checks.isChecked(plan.id, todayKey())).length);
 const remainCount = computed(() => plans.plans.length - doneCount.value);
 const pct = computed(() => plans.plans.length ? Math.round(doneCount.value / plans.plans.length * 100) : 0);
-// ── echarts bar ───────────────────────────────────────────────────────────────
 const chartEl = ref(null);
 let chartInst = null;
 function renderChart() {
@@ -143,8 +175,8 @@ function renderChart() {
         yAxis: { type: 'category', show: false, data: [''] },
         series: [
             { name: 'Done', type: 'bar', stack: 't', data: [done], itemStyle: { color: dark, borderRadius: [4, 0, 0, 4] }, barMaxWidth: 12 },
-            { name: 'Remain', type: 'bar', stack: 't', data: [remain], itemStyle: { color: faint, borderRadius: [0, 4, 4, 0] } }
-        ]
+            { name: 'Remain', type: 'bar', stack: 't', data: [remain], itemStyle: { color: faint, borderRadius: [0, 4, 4, 0] } },
+        ],
     });
 }
 watch([doneCount, remainCount], () => renderChart());
@@ -184,34 +216,34 @@ if (!__VLS_ctx.plans.plans.length) {
         ...{ class: "empty-state-text" },
     });
     /** @type {__VLS_StyleScopedClasses['empty-state-text']} */ ;
-    (__VLS_ctx.t('plan.empty', 'No plans yet — add your first habit or task below'));
+    (__VLS_ctx.t('plan.empty', 'No plans yet - add your first habit or task below'));
 }
 else {
-    for (const [group, gi] of __VLS_vFor((__VLS_ctx.groupedPlans))) {
-        (gi);
+    for (const [group, index] of __VLS_vFor((__VLS_ctx.groupedPlans))) {
+        (index);
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
             ...{ class: "plan-group-label" },
         });
         /** @type {__VLS_StyleScopedClasses['plan-group-label']} */ ;
         (group.label);
-        for (const [p] of __VLS_vFor((group.items))) {
+        for (const [plan] of __VLS_vFor((group.items))) {
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
                 ...{ onClick: (...[$event]) => {
                         if (!!(!__VLS_ctx.plans.plans.length))
                             return;
-                        __VLS_ctx.onRowClick(p);
+                        __VLS_ctx.onRowClick(plan);
                         // @ts-ignore
                         [plans, t, groupedPlans, onRowClick,];
                     } },
-                key: (p.id),
+                key: (plan.id),
                 ...{ class: "plan-item" },
-                ...{ class: ({ 'done-item': __VLS_ctx.checks.isChecked(p.id, __VLS_ctx.todayKey()) }) },
+                ...{ class: ({ 'done-item': __VLS_ctx.checks.isChecked(plan.id, __VLS_ctx.todayKey()) }) },
             });
             /** @type {__VLS_StyleScopedClasses['plan-item']} */ ;
             /** @type {__VLS_StyleScopedClasses['done-item']} */ ;
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
                 ...{ class: "plan-check" },
-                ...{ class: ({ done: __VLS_ctx.checks.isChecked(p.id, __VLS_ctx.todayKey()) }) },
+                ...{ class: ({ done: __VLS_ctx.checks.isChecked(plan.id, __VLS_ctx.todayKey()) }) },
             });
             /** @type {__VLS_StyleScopedClasses['plan-check']} */ ;
             /** @type {__VLS_StyleScopedClasses['done']} */ ;
@@ -223,23 +255,23 @@ else {
                 ...{ class: "plan-name" },
             });
             /** @type {__VLS_StyleScopedClasses['plan-name']} */ ;
-            (p.name);
+            (plan.name);
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
                 ...{ class: "plan-meta" },
             });
             /** @type {__VLS_StyleScopedClasses['plan-meta']} */ ;
-            (p.type === 'habit' ? __VLS_ctx.t('plan.type.habit', '↻ daily habit') : __VLS_ctx.t('plan.type.todo', '⊡ task'));
+            (plan.type === 'habit' ? __VLS_ctx.t('plan.type.habit', 'daily habit') : __VLS_ctx.t('plan.type.todo', 'task'));
             __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
                 ...{ class: "plan-tag" },
-                ...{ class: (p.type) },
+                ...{ class: (plan.type) },
             });
             /** @type {__VLS_StyleScopedClasses['plan-tag']} */ ;
-            (p.type);
+            (__VLS_ctx.planTypeTag(plan.type));
             __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
                 ...{ class: "plan-time" },
             });
             /** @type {__VLS_StyleScopedClasses['plan-time']} */ ;
-            (p.time);
+            (plan.time);
             if (!__VLS_ctx.auth.isAdmin) {
                 __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
                     ...{ onClick: (...[$event]) => {
@@ -247,17 +279,17 @@ else {
                                 return;
                             if (!(!__VLS_ctx.auth.isAdmin))
                                 return;
-                            __VLS_ctx.plans.remove(p.id);
+                            __VLS_ctx.plans.remove(plan.id);
                             // @ts-ignore
-                            [plans, t, t, checks, checks, todayKey, todayKey, auth,];
+                            [plans, t, t, checks, checks, todayKey, todayKey, planTypeTag, auth,];
                         } },
                     ...{ class: "plan-del" },
-                    title: "remove",
+                    title: (__VLS_ctx.t('plan.remove', 'remove')),
                 });
                 /** @type {__VLS_StyleScopedClasses['plan-del']} */ ;
             }
             // @ts-ignore
-            [];
+            [t,];
         }
         // @ts-ignore
         [];
@@ -384,28 +416,28 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "month-strip-rows" },
 });
 /** @type {__VLS_StyleScopedClasses['month-strip-rows']} */ ;
-for (const [d] of __VLS_vFor((__VLS_ctx.daysInStrip))) {
+for (const [day] of __VLS_vFor((__VLS_ctx.daysInStrip))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        key: (d.day),
+        key: (day.day),
         ...{ class: "day-row" },
     });
     /** @type {__VLS_StyleScopedClasses['day-row']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "day-num" },
-        ...{ class: ({ today: d.isToday }) },
+        ...{ class: ({ today: day.isToday }) },
     });
     /** @type {__VLS_StyleScopedClasses['day-num']} */ ;
     /** @type {__VLS_StyleScopedClasses['today']} */ ;
-    (d.day);
+    (day.day);
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "day-dots" },
     });
     /** @type {__VLS_StyleScopedClasses['day-dots']} */ ;
-    for (const [h] of __VLS_vFor((__VLS_ctx.habitPlans))) {
+    for (const [habit] of __VLS_vFor((__VLS_ctx.habitPlans))) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-            key: (h.id),
+            key: (habit.id),
             ...{ class: "day-cell" },
-            ...{ class: ({ done: !d.isFuture && __VLS_ctx.checks.isChecked(h.id, d.key) }) },
+            ...{ class: ({ done: !day.isFuture && __VLS_ctx.checks.isChecked(habit.id, day.key) }) },
         });
         /** @type {__VLS_StyleScopedClasses['day-cell']} */ ;
         /** @type {__VLS_StyleScopedClasses['done']} */ ;
@@ -414,11 +446,11 @@ for (const [d] of __VLS_vFor((__VLS_ctx.daysInStrip))) {
     }
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "day-pct" },
-        ...{ class: ({ full: d.pct === 100 }) },
+        ...{ class: ({ full: day.pct === 100 }) },
     });
     /** @type {__VLS_StyleScopedClasses['day-pct']} */ ;
     /** @type {__VLS_StyleScopedClasses['full']} */ ;
-    (d.isFuture || !__VLS_ctx.plans.plans.length ? '—' : d.pct + '%');
+    (day.isFuture || !__VLS_ctx.plans.plans.length ? '—' : `${day.pct}%`);
     // @ts-ignore
     [plans,];
 }
@@ -473,7 +505,278 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "stat-chart" },
 });
 /** @type {__VLS_StyleScopedClasses['stat-chart']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "ai-review-panel" },
+});
+/** @type {__VLS_StyleScopedClasses['ai-review-panel']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "ai-review-head" },
+});
+/** @type {__VLS_StyleScopedClasses['ai-review-head']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "ai-review-heading" },
+});
+/** @type {__VLS_StyleScopedClasses['ai-review-heading']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "ai-review-kicker" },
+});
+/** @type {__VLS_StyleScopedClasses['ai-review-kicker']} */ ;
+(__VLS_ctx.t('plan.ai.title', 'AI Review'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "ai-review-subtitle" },
+});
+/** @type {__VLS_StyleScopedClasses['ai-review-subtitle']} */ ;
+(__VLS_ctx.t('plan.ai.subtitle', 'Review your plan execution by day / week / month / year'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.generateReview(__VLS_ctx.aiReview.activePeriod);
+            // @ts-ignore
+            [t, t, t, t, t, doneCount, remainCount, pct, generateReview, aiReview,];
+        } },
+    ...{ class: "ai-review-refresh" },
+    disabled: (__VLS_ctx.aiReview.loading || !__VLS_ctx.plans.plans.length),
+});
+/** @type {__VLS_StyleScopedClasses['ai-review-refresh']} */ ;
+(__VLS_ctx.aiReview.current ? __VLS_ctx.t('plan.ai.refresh', 'Refresh') : __VLS_ctx.t('plan.ai.generate', 'Generate'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "ai-review-periods" },
+});
+/** @type {__VLS_StyleScopedClasses['ai-review-periods']} */ ;
+for (const [period] of __VLS_vFor((__VLS_ctx.REVIEW_PERIODS))) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+        ...{ onClick: (...[$event]) => {
+                __VLS_ctx.generateReview(period);
+                // @ts-ignore
+                [plans, t, t, generateReview, aiReview, aiReview, REVIEW_PERIODS,];
+            } },
+        key: (period),
+        ...{ class: "ai-review-period-btn" },
+        ...{ class: ({ active: __VLS_ctx.aiReview.activePeriod === period }) },
+        disabled: (__VLS_ctx.aiReview.loading || !__VLS_ctx.plans.plans.length),
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-period-btn']} */ ;
+    /** @type {__VLS_StyleScopedClasses['active']} */ ;
+    (__VLS_ctx.periodLabel(period));
+    // @ts-ignore
+    [plans, aiReview, aiReview, periodLabel,];
+}
+if (!__VLS_ctx.plans.plans.length) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-empty" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-empty']} */ ;
+    (__VLS_ctx.t('plan.ai.empty', 'Add some plans first, then let AI judge your execution.'));
+}
+else if (__VLS_ctx.aiReview.loading) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-loading" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-loading']} */ ;
+    (__VLS_ctx.t('plan.ai.loading', 'AI is generating a critique based on your completion data...'));
+}
+else if (__VLS_ctx.aiReview.current) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-meta" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-meta']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "ai-review-chip" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-chip']} */ ;
+    (__VLS_ctx.periodLabel(__VLS_ctx.aiReview.current.period, true));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "ai-review-chip" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-chip']} */ ;
+    (__VLS_ctx.aiReview.current.summary.from);
+    (__VLS_ctx.aiReview.current.summary.to);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "ai-review-chip" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-chip']} */ ;
+    (__VLS_ctx.aiReview.current.summary.completionRate);
+    (__VLS_ctx.t('plan.ai.complete', 'completion'));
+    if (__VLS_ctx.aiReview.current.source === 'fallback') {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "ai-review-chip fallback" },
+        });
+        /** @type {__VLS_StyleScopedClasses['ai-review-chip']} */ ;
+        /** @type {__VLS_StyleScopedClasses['fallback']} */ ;
+        (__VLS_ctx.t('plan.ai.fallback', 'fallback'));
+    }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-copy" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-copy']} */ ;
+    (__VLS_ctx.aiReview.current.review);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-stats" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stats']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-stat" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "ai-review-stat-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat-label']} */ ;
+    (__VLS_ctx.t('plan.ai.stats.checks', 'Checks done'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "ai-review-stat-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat-value']} */ ;
+    (__VLS_ctx.aiReview.current.summary.completedChecks);
+    (__VLS_ctx.aiReview.current.summary.expectedChecks);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-stat" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "ai-review-stat-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat-label']} */ ;
+    (__VLS_ctx.t('plan.ai.stats.perfect', 'Perfect days'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "ai-review-stat-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat-value']} */ ;
+    (__VLS_ctx.aiReview.current.summary.perfectDays);
+    (__VLS_ctx.aiReview.current.summary.activeDays);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-stat" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "ai-review-stat-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat-label']} */ ;
+    (__VLS_ctx.t('plan.ai.stats.streak', 'Current streak'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "ai-review-stat-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat-value']} */ ;
+    (__VLS_ctx.aiReview.current.summary.currentPerfectStreak);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-stat" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "ai-review-stat-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat-label']} */ ;
+    (__VLS_ctx.t('plan.ai.stats.longest', 'Longest streak'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "ai-review-stat-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-stat-value']} */ ;
+    (__VLS_ctx.aiReview.current.summary.longestPerfectStreak);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-plan-groups" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-plan-groups']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-plan-group" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-plan-group']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-group-title" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-group-title']} */ ;
+    (__VLS_ctx.t('plan.ai.best', 'Best plans'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-plan-list" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-plan-list']} */ ;
+    for (const [plan] of __VLS_vFor((__VLS_ctx.aiReview.current.summary.bestPlans))) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            key: (`best-${plan.id}`),
+            ...{ class: "ai-review-plan-pill good" },
+        });
+        /** @type {__VLS_StyleScopedClasses['ai-review-plan-pill']} */ ;
+        /** @type {__VLS_StyleScopedClasses['good']} */ ;
+        (plan.name);
+        (plan.completedDays);
+        (plan.expectedDays);
+        (plan.completionRate);
+        // @ts-ignore
+        [plans, t, t, t, t, t, t, t, t, t, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, aiReview, periodLabel,];
+    }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-plan-group" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-plan-group']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-group-title" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-group-title']} */ ;
+    (__VLS_ctx.t('plan.ai.weakest', 'Needs work'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-plan-list" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-plan-list']} */ ;
+    for (const [plan] of __VLS_vFor((__VLS_ctx.aiReview.current.summary.weakestPlans))) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            key: (`weak-${plan.id}`),
+            ...{ class: "ai-review-plan-pill weak" },
+        });
+        /** @type {__VLS_StyleScopedClasses['ai-review-plan-pill']} */ ;
+        /** @type {__VLS_StyleScopedClasses['weak']} */ ;
+        (plan.name);
+        (plan.completedDays);
+        (plan.expectedDays);
+        (plan.completionRate);
+        // @ts-ignore
+        [t, aiReview,];
+    }
+    if (__VLS_ctx.aiReview.current.summary.mostMissedDays.length) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "ai-review-missed" },
+        });
+        /** @type {__VLS_StyleScopedClasses['ai-review-missed']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "ai-review-missed-label" },
+        });
+        /** @type {__VLS_StyleScopedClasses['ai-review-missed-label']} */ ;
+        (__VLS_ctx.t('plan.ai.missed', 'Worst days'));
+        for (const [day] of __VLS_vFor((__VLS_ctx.aiReview.current.summary.mostMissedDays))) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+                key: (day.date),
+                ...{ class: "ai-review-plan-pill neutral" },
+            });
+            /** @type {__VLS_StyleScopedClasses['ai-review-plan-pill']} */ ;
+            /** @type {__VLS_StyleScopedClasses['neutral']} */ ;
+            (day.date);
+            (day.completedChecks);
+            (day.expectedChecks);
+            (day.completionRate);
+            // @ts-ignore
+            [t, aiReview, aiReview,];
+        }
+    }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-foot" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-foot']} */ ;
+    (__VLS_ctx.t('plan.ai.model', 'Model'));
+    (__VLS_ctx.aiReview.current.model);
+    (__VLS_ctx.formatGeneratedAt(__VLS_ctx.aiReview.current.generatedAt));
+}
+else if (__VLS_ctx.aiReview.error) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-error" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-error']} */ ;
+    (__VLS_ctx.aiReview.error);
+}
+else {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "ai-review-placeholder" },
+    });
+    /** @type {__VLS_StyleScopedClasses['ai-review-placeholder']} */ ;
+    (__VLS_ctx.t('plan.ai.placeholder', 'Pick a period and let AI summarize how well you actually executed.'));
+}
 // @ts-ignore
-[t, t, t, doneCount, remainCount, pct,];
+[t, t, aiReview, aiReview, aiReview, aiReview, formatGeneratedAt,];
 const __VLS_export = (await import('vue')).defineComponent({});
 export default {};

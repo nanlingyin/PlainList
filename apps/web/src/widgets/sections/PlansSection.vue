@@ -3,26 +3,33 @@
     <div class="plan-list">
       <div v-if="!plans.plans.length" class="empty-state">
         <div class="empty-state-icon">○</div>
-        <div class="empty-state-text">{{ t('plan.empty', 'No plans yet — add your first habit or task below') }}</div>
+        <div class="empty-state-text">{{ t('plan.empty', 'No plans yet - add your first habit or task below') }}</div>
       </div>
       <template v-else>
-        <template v-for="(group, gi) in groupedPlans" :key="gi">
+        <template v-for="(group, index) in groupedPlans" :key="index">
           <div class="plan-group-label">{{ group.label }}</div>
           <div
-            v-for="p in group.items"
-            :key="p.id"
+            v-for="plan in group.items"
+            :key="plan.id"
             class="plan-item"
-            :class="{ 'done-item': checks.isChecked(p.id, todayKey()) }"
-            @click="onRowClick(p)"
+            :class="{ 'done-item': checks.isChecked(plan.id, todayKey()) }"
+            @click="onRowClick(plan)"
           >
-            <div class="plan-check" :class="{ done: checks.isChecked(p.id, todayKey()) }"></div>
+            <div class="plan-check" :class="{ done: checks.isChecked(plan.id, todayKey()) }"></div>
             <div class="plan-text">
-              <div class="plan-name">{{ p.name }}</div>
-              <div class="plan-meta">{{ p.type === 'habit' ? t('plan.type.habit', '↻ daily habit') : t('plan.type.todo', '⊡ task') }}</div>
+              <div class="plan-name">{{ plan.name }}</div>
+              <div class="plan-meta">
+                {{ plan.type === 'habit' ? t('plan.type.habit', 'daily habit') : t('plan.type.todo', 'task') }}
+              </div>
             </div>
-            <span class="plan-tag" :class="p.type">{{ p.type }}</span>
-            <span class="plan-time">{{ p.time }}</span>
-            <button v-if="!auth.isAdmin" class="plan-del" title="remove" @click.stop="plans.remove(p.id)">×</button>
+            <span class="plan-tag" :class="plan.type">{{ planTypeTag(plan.type) }}</span>
+            <span class="plan-time">{{ plan.time }}</span>
+            <button
+              v-if="!auth.isAdmin"
+              class="plan-del"
+              :title="t('plan.remove', 'remove')"
+              @click.stop="plans.remove(plan.id)"
+            >×</button>
           </div>
         </template>
       </template>
@@ -57,18 +64,18 @@
         <button class="strip-nav" @click="nextMonth">&#8250;</button>
       </div>
       <div class="month-strip-rows">
-        <div v-for="d in daysInStrip" :key="d.day" class="day-row">
-          <div class="day-num" :class="{ today: d.isToday }">{{ d.day }}</div>
+        <div v-for="day in daysInStrip" :key="day.day" class="day-row">
+          <div class="day-num" :class="{ today: day.isToday }">{{ day.day }}</div>
           <div class="day-dots">
             <div
-              v-for="h in habitPlans"
-              :key="h.id"
+              v-for="habit in habitPlans"
+              :key="habit.id"
               class="day-cell"
-              :class="{ done: !d.isFuture && checks.isChecked(h.id, d.key) }"
+              :class="{ done: !day.isFuture && checks.isChecked(habit.id, day.key) }"
             ></div>
           </div>
-          <div class="day-pct" :class="{ full: d.pct === 100 }">
-            {{ d.isFuture || !plans.plans.length ? '—' : d.pct + '%' }}
+          <div class="day-pct" :class="{ full: day.pct === 100 }">
+            {{ day.isFuture || !plans.plans.length ? '—' : `${day.pct}%` }}
           </div>
         </div>
       </div>
@@ -89,77 +96,226 @@
       </div>
       <div ref="chartEl" class="stat-chart"></div>
     </div>
+
+    <div class="ai-review-panel">
+      <div class="ai-review-head">
+        <div class="ai-review-heading">
+          <div class="ai-review-kicker">{{ t('plan.ai.title', 'AI Review') }}</div>
+          <div class="ai-review-subtitle">{{ t('plan.ai.subtitle', 'Review your plan execution by day / week / month / year') }}</div>
+        </div>
+        <button
+          class="ai-review-refresh"
+          :disabled="aiReview.loading || !plans.plans.length"
+          @click="generateReview(aiReview.activePeriod)"
+        >
+          {{ aiReview.current ? t('plan.ai.refresh', 'Refresh') : t('plan.ai.generate', 'Generate') }}
+        </button>
+      </div>
+
+      <div class="ai-review-periods">
+        <button
+          v-for="period in REVIEW_PERIODS"
+          :key="period"
+          class="ai-review-period-btn"
+          :class="{ active: aiReview.activePeriod === period }"
+          :disabled="aiReview.loading || !plans.plans.length"
+          @click="generateReview(period)"
+        >
+          {{ periodLabel(period) }}
+        </button>
+      </div>
+
+      <div v-if="!plans.plans.length" class="ai-review-empty">
+        {{ t('plan.ai.empty', 'Add some plans first, then let AI judge your execution.') }}
+      </div>
+      <div v-else-if="aiReview.loading" class="ai-review-loading">
+        {{ t('plan.ai.loading', 'AI is generating a critique based on your completion data...') }}
+      </div>
+      <template v-else-if="aiReview.current">
+        <div class="ai-review-meta">
+          <span class="ai-review-chip">{{ periodLabel(aiReview.current.period, true) }}</span>
+          <span class="ai-review-chip">{{ aiReview.current.summary.from }} ~ {{ aiReview.current.summary.to }}</span>
+          <span class="ai-review-chip">{{ aiReview.current.summary.completionRate }}% {{ t('plan.ai.complete', 'completion') }}</span>
+          <span v-if="aiReview.current.source === 'fallback'" class="ai-review-chip fallback">
+            {{ t('plan.ai.fallback', 'fallback') }}
+          </span>
+        </div>
+
+        <div class="ai-review-copy">{{ aiReview.current.review }}</div>
+
+        <div class="ai-review-stats">
+          <div class="ai-review-stat">
+            <span class="ai-review-stat-label">{{ t('plan.ai.stats.checks', 'Checks done') }}</span>
+            <strong class="ai-review-stat-value">
+              {{ aiReview.current.summary.completedChecks }}/{{ aiReview.current.summary.expectedChecks }}
+            </strong>
+          </div>
+          <div class="ai-review-stat">
+            <span class="ai-review-stat-label">{{ t('plan.ai.stats.perfect', 'Perfect days') }}</span>
+            <strong class="ai-review-stat-value">
+              {{ aiReview.current.summary.perfectDays }}/{{ aiReview.current.summary.activeDays }}
+            </strong>
+          </div>
+          <div class="ai-review-stat">
+            <span class="ai-review-stat-label">{{ t('plan.ai.stats.streak', 'Current streak') }}</span>
+            <strong class="ai-review-stat-value">{{ aiReview.current.summary.currentPerfectStreak }}</strong>
+          </div>
+          <div class="ai-review-stat">
+            <span class="ai-review-stat-label">{{ t('plan.ai.stats.longest', 'Longest streak') }}</span>
+            <strong class="ai-review-stat-value">{{ aiReview.current.summary.longestPerfectStreak }}</strong>
+          </div>
+        </div>
+
+        <div class="ai-review-plan-groups">
+          <div class="ai-review-plan-group">
+            <div class="ai-review-group-title">{{ t('plan.ai.best', 'Best plans') }}</div>
+            <div class="ai-review-plan-list">
+              <span
+                v-for="plan in aiReview.current.summary.bestPlans"
+                :key="`best-${plan.id}`"
+                class="ai-review-plan-pill good"
+              >
+                {{ plan.name }} · {{ plan.completedDays }}/{{ plan.expectedDays }} · {{ plan.completionRate }}%
+              </span>
+            </div>
+          </div>
+          <div class="ai-review-plan-group">
+            <div class="ai-review-group-title">{{ t('plan.ai.weakest', 'Needs work') }}</div>
+            <div class="ai-review-plan-list">
+              <span
+                v-for="plan in aiReview.current.summary.weakestPlans"
+                :key="`weak-${plan.id}`"
+                class="ai-review-plan-pill weak"
+              >
+                {{ plan.name }} · {{ plan.completedDays }}/{{ plan.expectedDays }} · {{ plan.completionRate }}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="aiReview.current.summary.mostMissedDays.length" class="ai-review-missed">
+          <span class="ai-review-missed-label">{{ t('plan.ai.missed', 'Worst days') }}</span>
+          <span
+            v-for="day in aiReview.current.summary.mostMissedDays"
+            :key="day.date"
+            class="ai-review-plan-pill neutral"
+          >
+            {{ day.date }} · {{ day.completedChecks }}/{{ day.expectedChecks }} · {{ day.completionRate }}%
+          </span>
+        </div>
+
+        <div class="ai-review-foot">
+          {{ t('plan.ai.model', 'Model') }} {{ aiReview.current.model }} · {{ formatGeneratedAt(aiReview.current.generatedAt) }}
+        </div>
+      </template>
+      <div v-else-if="aiReview.error" class="ai-review-error">{{ aiReview.error }}</div>
+      <div v-else class="ai-review-placeholder">
+        {{ t('plan.ai.placeholder', 'Pick a period and let AI summarize how well you actually executed.') }}
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
+import { useAiReviewStore } from '@/features/ai-review/model/useAiReviewStore'
 import { usePlansStore } from '@/features/plans/model/usePlansStore'
 import { useChecksStore } from '@/features/checks/model/useChecksStore'
 import { useAuthStore } from '@/features/auth/model/useAuthStore'
 import { useI18nStore } from '@/shared/i18n/useI18nStore'
 
-const plans  = usePlansStore()
+const aiReview = useAiReviewStore()
+const plans = usePlansStore()
 const checks = useChecksStore()
-const auth   = useAuthStore()
-const i18n   = useI18nStore()
-function t(key, fallback) { return i18n.t(key, fallback) }
+const auth = useAuthStore()
+const i18n = useI18nStore()
+function t(key, fallback, params) { return i18n.t(key, fallback, params) }
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+const REVIEW_PERIODS = ['day', 'week', 'month', 'year']
+const MONTHS_DEFAULT = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 function todayKey() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  const date = new Date()
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-function dateKey(y, m, d) {
-  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+function dateKey(year, month, day) {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December'
-]
-
-// ── grouping ──────────────────────────────────────────────────────────────────
+const monthNames = computed(() => i18n.L('MONTHS', MONTHS_DEFAULT))
 
 const GROUPS = [
-  { key: 'group.morning_early', fallback: 'Morning · before 9:00',   test: h => h < 9  },
-  { key: 'group.morning',       fallback: 'Morning · 9:00–13:00',    test: h => h < 13 },
-  { key: 'group.afternoon',     fallback: 'Afternoon · 13:00–18:00', test: h => h < 18 },
-  { key: 'group.evening',       fallback: 'Evening · after 18:00',   test: () => true  },
+  { key: 'group.morning_early', fallback: 'Morning · before 9:00', test: (hour) => hour < 9 },
+  { key: 'group.morning', fallback: 'Morning · 9:00-13:00', test: (hour) => hour < 13 },
+  { key: 'group.afternoon', fallback: 'Afternoon · 13:00-18:00', test: (hour) => hour < 18 },
+  { key: 'group.evening', fallback: 'Evening · after 18:00', test: () => true },
 ]
 
 const groupedPlans = computed(() => {
   const result = []
   let lastKey = null
-  for (const p of plans.plans) {
-    const hour = parseInt(p.time.split(':')[0])
-    const g = GROUPS.find(g => g.test(hour))
-    if (g.key !== lastKey) {
-      result.push({ label: t(g.key, g.fallback), items: [] })
-      lastKey = g.key
+
+  for (const plan of plans.plans) {
+    const hour = Number.parseInt(plan.time.split(':')[0], 10)
+    const group = GROUPS.find((item) => item.test(hour))
+    if (!group) continue
+    if (group.key !== lastKey) {
+      result.push({ label: t(group.key, group.fallback), items: [] })
+      lastKey = group.key
     }
-    result[result.length - 1].items.push(p)
+    result[result.length - 1].items.push(plan)
   }
+
   return result
 })
 
-const habitPlans = computed(() => plans.plans.filter(p => p.type === 'habit'))
+const habitPlans = computed(() => plans.plans.filter((plan) => plan.type === 'habit'))
 
-// ── toggle / delete ───────────────────────────────────────────────────────────
-
-function onRowClick(p) {
-  checks.toggle(p.id, todayKey())
+function onRowClick(plan) {
+  checks.toggle(plan.id, todayKey())
 }
 
-// ── add form ──────────────────────────────────────────────────────────────────
+function planTypeTag(type) {
+  return type === 'habit'
+    ? t('plan.type_tag.habit', 'habit')
+    : t('plan.type_tag.todo', 'task')
+}
 
-const formOpen  = ref(false)
-const newName   = ref('')
-const newType   = ref('habit')
-const newTime   = ref('')
+function periodLabel(period, full = false) {
+  const short = {
+    day: t('plan.ai.period.day', 'Day'),
+    week: t('plan.ai.period.week', 'Week'),
+    month: t('plan.ai.period.month', 'Month'),
+    year: t('plan.ai.period.year', 'Year'),
+  }
+  const long = {
+    day: t('plan.ai.period.day_full', 'Daily'),
+    week: t('plan.ai.period.week_full', 'Weekly'),
+    month: t('plan.ai.period.month_full', 'Monthly'),
+    year: t('plan.ai.period.year_full', 'Yearly'),
+  }
+
+  return full ? long[period] : short[period]
+}
+
+async function generateReview(period) {
+  try {
+    await aiReview.generate(period, todayKey())
+  } catch {}
+}
+
+function formatGeneratedAt(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString(i18n.locale === 'zh-CN' ? 'zh-CN' : 'en-US')
+}
+
+const formOpen = ref(false)
+const newName = ref('')
+const newType = ref('habit')
+const newTime = ref('')
 const nameInput = ref(null)
 
 function openForm() {
@@ -169,66 +325,77 @@ function openForm() {
 
 function cancelForm() {
   formOpen.value = false
-  newName.value  = ''
-  newTime.value  = ''
+  newName.value = ''
+  newTime.value = ''
 }
 
 async function submitPlan() {
   const name = newName.value.trim()
   const time = newTime.value.trim() || '09:00'
-  if (!name) { nameInput.value?.focus(); return }
+  if (!name) {
+    nameInput.value?.focus()
+    return
+  }
   if (!/^\d{2}:\d{2}$/.test(time)) return
   await plans.add(name, newType.value, time)
   cancelForm()
 }
 
-// ── month strip ───────────────────────────────────────────────────────────────
-
 const today = new Date()
-const stripYear  = ref(today.getFullYear())
+const stripYear = ref(today.getFullYear())
 const stripMonth = ref(today.getMonth())
 
-const monthLabel = computed(() => `${MONTH_NAMES[stripMonth.value]} ${stripYear.value}`)
+const monthLabel = computed(() => (
+  i18n.locale === 'zh-CN'
+    ? `${stripYear.value}年${stripMonth.value + 1}月`
+    : `${monthNames.value[stripMonth.value]} ${stripYear.value}`
+))
 
 function prevMonth() {
-  if (stripMonth.value === 0) { stripMonth.value = 11; stripYear.value-- }
-  else stripMonth.value--
+  if (stripMonth.value === 0) {
+    stripMonth.value = 11
+    stripYear.value -= 1
+  } else {
+    stripMonth.value -= 1
+  }
   checks.fetchMonth(stripYear.value, stripMonth.value + 1)
 }
 
 function nextMonth() {
-  if (stripMonth.value === 11) { stripMonth.value = 0; stripYear.value++ }
-  else stripMonth.value++
+  if (stripMonth.value === 11) {
+    stripMonth.value = 0
+    stripYear.value += 1
+  } else {
+    stripMonth.value += 1
+  }
   checks.fetchMonth(stripYear.value, stripMonth.value + 1)
 }
 
 const daysInStrip = computed(() => {
-  const tNow   = new Date()
-  const tY     = tNow.getFullYear()
-  const tM     = tNow.getMonth()
-  const tD     = tNow.getDate()
-  const y      = stripYear.value
-  const m      = stripMonth.value
-  const count  = new Date(y, m + 1, 0).getDate()
+  const nowDate = new Date()
+  const currentYear = nowDate.getFullYear()
+  const currentMonth = nowDate.getMonth()
+  const currentDay = nowDate.getDate()
+  const year = stripYear.value
+  const month = stripMonth.value
+  const count = new Date(year, month + 1, 0).getDate()
   const result = []
-  for (let d = 1; d <= count; d++) {
-    const isToday  = y === tY && m === tM && d === tD
-    const isFuture = new Date(y, m, d) > tNow
-    const k        = dateKey(y, m, d)
-    const doneN    = plans.plans.filter(p => checks.isChecked(p.id, k)).length
-    const pct      = plans.plans.length ? Math.round(doneN / plans.plans.length * 100) : 0
-    result.push({ day: d, isToday, isFuture, key: k, pct })
+
+  for (let day = 1; day <= count; day += 1) {
+    const isToday = year === currentYear && month === currentMonth && day === currentDay
+    const isFuture = new Date(year, month, day) > nowDate
+    const key = dateKey(year, month, day)
+    const doneCountForDay = plans.plans.filter((plan) => checks.isChecked(plan.id, key)).length
+    const completionPct = plans.plans.length ? Math.round(doneCountForDay / plans.plans.length * 100) : 0
+    result.push({ day, isToday, isFuture, key, pct: completionPct })
   }
+
   return result
 })
 
-// ── stats ─────────────────────────────────────────────────────────────────────
-
-const doneCount   = computed(() => plans.plans.filter(p => checks.isChecked(p.id, todayKey())).length)
+const doneCount = computed(() => plans.plans.filter((plan) => checks.isChecked(plan.id, todayKey())).length)
 const remainCount = computed(() => plans.plans.length - doneCount.value)
-const pct         = computed(() => plans.plans.length ? Math.round(doneCount.value / plans.plans.length * 100) : 0)
-
-// ── echarts bar ───────────────────────────────────────────────────────────────
+const pct = computed(() => plans.plans.length ? Math.round(doneCount.value / plans.plans.length * 100) : 0)
 
 const chartEl = ref(null)
 let chartInst = null
@@ -239,18 +406,18 @@ function renderChart() {
   const styles = getComputedStyle(document.documentElement)
   const dark = styles.getPropertyValue('--dark').trim() || '#111111'
   const faint = styles.getPropertyValue('--faint').trim() || '#E4E4E4'
-  const done   = doneCount.value
+  const done = doneCount.value
   const remain = remainCount.value
-  const total  = done + remain || 1
+  const total = done + remain || 1
   chartInst.setOption({
     backgroundColor: 'transparent',
     grid: { top: 4, bottom: 4, left: 8, right: 8 },
     xAxis: { type: 'value', max: total, show: false },
     yAxis: { type: 'category', show: false, data: [''] },
     series: [
-      { name: 'Done',   type: 'bar', stack: 't', data: [done],   itemStyle: { color: dark, borderRadius: [4,0,0,4] }, barMaxWidth: 12 },
-      { name: 'Remain', type: 'bar', stack: 't', data: [remain], itemStyle: { color: faint, borderRadius: [0,4,4,0] } }
-    ]
+      { name: 'Done', type: 'bar', stack: 't', data: [done], itemStyle: { color: dark, borderRadius: [4, 0, 0, 4] }, barMaxWidth: 12 },
+      { name: 'Remain', type: 'bar', stack: 't', data: [remain], itemStyle: { color: faint, borderRadius: [0, 4, 4, 0] } },
+    ],
   })
 }
 

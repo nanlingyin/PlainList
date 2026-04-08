@@ -88,7 +88,7 @@
               </div>
             </div>
             <div v-else class="day-popover-empty">
-              {{ t('tracker.empty', 'No completed items for this day') }}
+              {{ t('calendar.empty_day', 'No completed items for this day') }}
             </div>
           </div>
         </div>
@@ -185,7 +185,11 @@ function dayClass(month, day) {
 function dayTitle(month, day) {
   const isFuture = isFutureDay(month, day)
   const pct = isFuture ? null : pctForDay(month, day)
-  return `${MONTHS_S.value[month]} ${day}: ${pct === null ? 'upcoming' : `${pct}%`}`
+  return t('calendar.day_title', '{month} {day}: {value}', {
+    month: MONTHS_S.value[month],
+    day,
+    value: pct === null ? t('calendar.upcoming', 'upcoming') : `${pct}%`,
+  })
 }
 
 function buildPopoverStyle(event) {
@@ -205,7 +209,11 @@ function buildPopoverStyle(event) {
 function openDayPopover(month, day, event) {
   const tasks = completedTasksForDay(month, day)
   dayPopover.value = {
-    title: `${MONTHS.value[month]} ${day}, ${year.value}`,
+    title: t('calendar.popover_title', '{month} {day}, {year}', {
+      month: MONTHS.value[month],
+      day,
+      year: year.value,
+    }),
     completed: tasks.length,
     total: plansStore.plans.length,
     tasks: tasks.map((task) => ({

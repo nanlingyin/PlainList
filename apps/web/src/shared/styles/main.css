@@ -860,7 +860,8 @@
       grid-template-areas:
         "list calendar"
         "controls calendar"
-        "stats calendar";
+        "stats calendar"
+        "review calendar";
       gap: 24px 28px;
       align-items: start;
       background:
@@ -871,6 +872,7 @@
     .plan-controls,
     .month-strip,
     .s2-stats,
+    .ai-review-panel,
     .tracker-table-wrap,
     .tracker-summary .tsumm-item {
       background: color-mix(in srgb, var(--surface) 94%, var(--bg));
@@ -1072,6 +1074,201 @@
       padding: 0 18px;
       background: var(--surface);
     }
+    .ai-review-panel {
+      grid-area: review;
+      padding: 20px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .ai-review-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .ai-review-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ai-review-kicker {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--dark);
+    }
+    .ai-review-subtitle {
+      font-size: 12px;
+      color: var(--mid);
+      line-height: 1.6;
+    }
+    .ai-review-refresh,
+    .ai-review-period-btn {
+      border: 1px solid var(--faint);
+      background: color-mix(in srgb, var(--surface) 82%, var(--bg));
+      color: var(--mid);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .ai-review-refresh {
+      min-height: 34px;
+      padding: 0 14px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .ai-review-refresh:hover,
+    .ai-review-period-btn:hover {
+      border-color: color-mix(in srgb, var(--mid) 40%, var(--surface));
+      background: var(--surface);
+      color: var(--dark);
+    }
+    .ai-review-refresh:disabled,
+    .ai-review-period-btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .ai-review-periods {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ai-review-period-btn {
+      min-width: 48px;
+      min-height: 32px;
+      padding: 0 12px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .ai-review-period-btn.active {
+      border-color: var(--dark);
+      background: var(--dark);
+      color: var(--surface);
+    }
+    .ai-review-placeholder,
+    .ai-review-empty,
+    .ai-review-loading,
+    .ai-review-error {
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, var(--bg)), transparent);
+      color: var(--mid);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .ai-review-error {
+      border: 1px solid color-mix(in srgb, var(--mid) 24%, var(--surface));
+    }
+    .ai-review-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ai-review-chip,
+    .ai-review-plan-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .ai-review-chip {
+      border: 1px solid var(--faint);
+      background: color-mix(in srgb, var(--surface) 72%, var(--bg));
+      color: var(--mid);
+    }
+    .ai-review-chip.fallback {
+      border-color: color-mix(in srgb, #c96b00 28%, var(--surface));
+      color: #8b5300;
+      background: color-mix(in srgb, #ffecce 44%, var(--surface));
+    }
+    .ai-review-copy {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--dark);
+      white-space: pre-line;
+    }
+    .ai-review-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .ai-review-stat {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface) 76%, var(--bg));
+      border: 1px solid var(--faint2);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ai-review-stat-label {
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .ai-review-stat-value {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--dark);
+    }
+    .ai-review-plan-groups {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .ai-review-plan-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ai-review-group-title,
+    .ai-review-missed-label {
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .ai-review-plan-list,
+    .ai-review-missed {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ai-review-plan-pill {
+      border: 1px solid var(--faint);
+      background: color-mix(in srgb, var(--surface) 90%, var(--bg));
+      color: var(--mid);
+    }
+    .ai-review-plan-pill.good {
+      border-color: color-mix(in srgb, var(--dark) 18%, var(--surface));
+      color: var(--dark);
+      background: color-mix(in srgb, var(--surface) 88%, var(--dark) 6%);
+    }
+    .ai-review-plan-pill.weak {
+      border-color: color-mix(in srgb, #8f2c2c 18%, var(--surface));
+      color: #7b3232;
+      background: color-mix(in srgb, #f7dede 44%, var(--surface));
+    }
+    .ai-review-plan-pill.neutral {
+      background: color-mix(in srgb, var(--surface) 82%, var(--faint2));
+    }
+    .ai-review-foot {
+      font-size: 10px;
+      letter-spacing: .08em;
+      color: var(--muted);
+      padding-top: 2px;
+    }
 
     #s3.tracker-section {
       display: flex;
@@ -1163,12 +1360,14 @@
           "list"
           "controls"
           "calendar"
-          "stats";
+          "stats"
+          "review";
         gap: 18px;
       }
       .plan-list,
       .plan-controls,
-      .month-strip {
+      .month-strip,
+      .ai-review-panel {
         padding-left: 18px;
         padding-right: 18px;
       }
@@ -1182,6 +1381,9 @@
       .stat-chart {
         grid-column: 1 / -1;
         min-height: 72px;
+      }
+      .ai-review-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .tracker-summary {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1217,7 +1419,8 @@
       #nav-user { display: none; }
       .plan-list,
       .plan-controls,
-      .month-strip {
+      .month-strip,
+      .ai-review-panel {
         padding-left: 16px;
         padding-right: 16px;
       }
@@ -1248,6 +1451,16 @@
       .apf-type,
       .apf-time {
         width: 100%;
+      }
+      .ai-review-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .ai-review-refresh {
+        width: 100%;
+      }
+      .ai-review-plan-groups {
+        grid-template-columns: 1fr;
       }
       .s3-month-label {
         width: 100%;
@@ -1297,6 +1510,9 @@
       .stat-item,
       .stat-chart {
         min-height: 74px;
+      }
+      .ai-review-stats {
+        grid-template-columns: 1fr;
       }
       .tracker-summary {
         grid-template-columns: 1fr;

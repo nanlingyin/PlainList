@@ -1,6 +1,6 @@
 import type { AuthenticatedUser, ChecksByPlan } from '@plainlist/shared';
 import { batchChecksSchema, checksQuerySchema, checkUpsertSchema } from '@plainlist/shared';
-import { getMonthRange, getPreviousMonth } from '@plainlist/shared';
+import { getMonthRange, getPreviousMonth, toDateKey } from '@plainlist/shared';
 import { pool } from '../../db/pool';
 
 function serviceError(status: number, message: string): Error & { status: number } {
@@ -36,7 +36,7 @@ export async function listChecks(user: AuthenticatedUser, query: unknown): Promi
     const record = row as { plan_id: number; check_date: Date | string; done: number };
     const planId = String(record.plan_id);
     const dateKey = record.check_date instanceof Date
-      ? record.check_date.toISOString().slice(0, 10)
+      ? toDateKey(record.check_date)
       : String(record.check_date).slice(0, 10);
 
     if (!result[planId]) {

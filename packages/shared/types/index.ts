@@ -29,6 +29,55 @@ export interface PlanRecord {
 
 export type ChecksByPlan = Record<string, Record<string, boolean>>;
 
+export type AiReviewPeriod = 'day' | 'week' | 'month' | 'year';
+
+export interface AiReviewPlanSummary {
+  id: number;
+  name: string;
+  type: PlanType;
+  completedDays: number;
+  expectedDays: number;
+  completionRate: number;
+}
+
+export interface AiReviewDaySummary {
+  date: string;
+  completedChecks: number;
+  expectedChecks: number;
+  completionRate: number;
+}
+
+export interface AiReviewSummary {
+  period: AiReviewPeriod;
+  periodLabel: string;
+  referenceDate: string;
+  from: string;
+  to: string;
+  totalPlans: number;
+  habitCount: number;
+  todoCount: number;
+  activeDays: number;
+  expectedChecks: number;
+  completedChecks: number;
+  completionRate: number;
+  perfectDays: number;
+  perfectDayRate: number;
+  currentPerfectStreak: number;
+  longestPerfectStreak: number;
+  bestPlans: AiReviewPlanSummary[];
+  weakestPlans: AiReviewPlanSummary[];
+  mostMissedDays: AiReviewDaySummary[];
+}
+
+export interface AiReviewResponse {
+  period: AiReviewPeriod;
+  review: string;
+  model: string;
+  source: 'ai' | 'fallback';
+  generatedAt: string;
+  summary: AiReviewSummary;
+}
+
 export interface InstalledPlugin {
   id: string;
   enabled: boolean;

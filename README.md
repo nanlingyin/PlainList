@@ -41,3 +41,9 @@ npm run build
 - The legacy root static frontend is being removed in favor of `apps/web`.
 - The plugin system is being narrowed from arbitrary JS execution toward manifest + config driven behavior.
 - Database bootstrap is managed through explicit migrations and seeds in `packages/db`.
+
+## AI Review
+
+- The Day section now includes an AI critique panel that can generate daily, weekly, monthly, and yearly reviews from plan + check data.
+- The backend calls an OpenAI-compatible chat completion endpoint through `apps/api/.env`.
+- Copy `apps/api/.env.example` if you need to change provider, model, or timeout.

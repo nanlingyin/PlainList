@@ -7,3 +7,5 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 apps/api/.env
+.codex-logs/
+.codex-mysql/
