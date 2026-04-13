@@ -1,5 +1,6 @@
-/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
-/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
+/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+import { DEMO_ACCOUNT } from '@plainlist/shared';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
@@ -9,6 +10,7 @@ import { usePluginsStore } from '@/features/plugins/model/usePluginsStore';
 import { useApi } from '@/shared/api/useApi';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 import AuthTerminal from '@/widgets/auth/AuthTerminal.vue';
+import ShowcaseHome from '@/widgets/auth/ShowcaseHome.vue';
 import PluginStore from '@/widgets/plugins/PluginStore.vue';
 import CalendarSection from '@/widgets/sections/CalendarSection.vue';
 import ClockSection from '@/widgets/sections/ClockSection.vue';
@@ -21,8 +23,9 @@ const checks = useChecksStore();
 const localeStore = useLocaleStore();
 const pluginsStore = usePluginsStore();
 const i18n = useI18nStore();
-const { get } = useApi();
+const { get, post } = useApi();
 const pluginStoreOpen = ref(false);
+const entryMode = ref('showcase');
 const activeSection = ref('s1');
 const isDashboardLoading = ref(false);
 const dashboardReady = ref(false);
@@ -39,6 +42,25 @@ const sections = computed(() => [
 const loaderText = computed(() => i18n.t('app.loader', 'Loading your dashboard...'));
 function t(key, fallback) {
     return i18n.t(key, fallback);
+}
+function openTerminal() {
+    entryMode.value = 'terminal';
+}
+function openShowcase() {
+    entryMode.value = 'showcase';
+}
+async function loginDemo() {
+    try {
+        const response = await post('/auth/login', {
+            username: DEMO_ACCOUNT.username,
+            password: DEMO_ACCOUNT.password,
+        });
+        auth.setAuth(response.token, response.username, response.isAdmin);
+        await loadDashboard();
+    }
+    catch {
+        entryMode.value = 'terminal';
+    }
 }
 function scrollTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -95,6 +117,7 @@ async function logout() {
     checks.clear();
     pluginsStore.clear();
     auth.logout();
+    entryMode.value = 'showcase';
 }
 function onPluginStoreClose() {
     pluginStoreOpen.value = false;
@@ -114,6 +137,7 @@ onMounted(async () => {
             dashboardReady.value = false;
             isDashboardLoading.value = false;
             auth.logout();
+            entryMode.value = 'showcase';
         }
     }
 });
@@ -133,32 +157,61 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 });
 /** @type {__VLS_StyleScopedClasses['dashboard-ready']} */ ;
 if (!__VLS_ctx.auth.isLoggedIn) {
-    const __VLS_0 = AuthTerminal;
-    // @ts-ignore
-    const __VLS_1 = __VLS_asFunctionalComponent1(__VLS_0, new __VLS_0({
-        ...{ 'onLogin': {} },
-    }));
-    const __VLS_2 = __VLS_1({
-        ...{ 'onLogin': {} },
-    }, ...__VLS_functionalComponentArgsRest(__VLS_1));
-    let __VLS_5;
-    const __VLS_6 = ({ login: {} },
-        { onLogin: (__VLS_ctx.onLogin) });
-    var __VLS_3;
-    var __VLS_4;
+    if (__VLS_ctx.entryMode === 'showcase') {
+        const __VLS_0 = ShowcaseHome;
+        // @ts-ignore
+        const __VLS_1 = __VLS_asFunctionalComponent1(__VLS_0, new __VLS_0({
+            ...{ 'onLogin': {} },
+            ...{ 'onDemo': {} },
+        }));
+        const __VLS_2 = __VLS_1({
+            ...{ 'onLogin': {} },
+            ...{ 'onDemo': {} },
+        }, ...__VLS_functionalComponentArgsRest(__VLS_1));
+        let __VLS_5;
+        const __VLS_6 = ({ login: {} },
+            { onLogin: (__VLS_ctx.openTerminal) });
+        const __VLS_7 = ({ demo: {} },
+            { onDemo: (__VLS_ctx.loginDemo) });
+        var __VLS_3;
+        var __VLS_4;
+    }
+    else {
+        const __VLS_8 = AuthTerminal;
+        // @ts-ignore
+        const __VLS_9 = __VLS_asFunctionalComponent1(__VLS_8, new __VLS_8({
+            ...{ 'onLogin': {} },
+            ...{ 'onDemo': {} },
+            ...{ 'onBack': {} },
+        }));
+        const __VLS_10 = __VLS_9({
+            ...{ 'onLogin': {} },
+            ...{ 'onDemo': {} },
+            ...{ 'onBack': {} },
+        }, ...__VLS_functionalComponentArgsRest(__VLS_9));
+        let __VLS_13;
+        const __VLS_14 = ({ login: {} },
+            { onLogin: (__VLS_ctx.onLogin) });
+        const __VLS_15 = ({ demo: {} },
+            { onDemo: (__VLS_ctx.loginDemo) });
+        const __VLS_16 = ({ back: {} },
+            { onBack: (__VLS_ctx.openShowcase) });
+        var __VLS_11;
+        var __VLS_12;
+    }
 }
 else {
-    let __VLS_7;
+    let __VLS_17;
     /** @ts-ignore @type {typeof __VLS_components.Transition | typeof __VLS_components.Transition} */
     Transition;
     // @ts-ignore
-    const __VLS_8 = __VLS_asFunctionalComponent1(__VLS_7, new __VLS_7({
+    const __VLS_18 = __VLS_asFunctionalComponent1(__VLS_17, new __VLS_17({
         name: "loader-fade",
     }));
-    const __VLS_9 = __VLS_8({
+    const __VLS_19 = __VLS_18({
         name: "loader-fade",
-    }, ...__VLS_functionalComponentArgsRest(__VLS_8));
-    const { default: __VLS_12 } = __VLS_10.slots;
+    }, ...__VLS_functionalComponentArgsRest(__VLS_18));
+    const { default: __VLS_22 } = __VLS_20.slots;
     if (__VLS_ctx.isDashboardLoading) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
             ...{ class: "app-loader" },
@@ -187,8 +240,8 @@ else {
         (__VLS_ctx.loaderText);
     }
     // @ts-ignore
-    [dashboardReady, auth, onLogin, isDashboardLoading, loaderText,];
-    var __VLS_10;
+    [dashboardReady, auth, entryMode, openTerminal, loginDemo, loginDemo, onLogin, openShowcase, isDashboardLoading, loaderText,];
+    var __VLS_20;
     __VLS_asFunctionalElement1(__VLS_intrinsics.nav, __VLS_intrinsics.nav)({
         ...{ class: "app-nav" },
     });
@@ -255,85 +308,85 @@ else {
         id: "nav-logout",
     });
     (__VLS_ctx.t('nav.lock', 'lock'));
-    const __VLS_13 = ClockSection;
-    // @ts-ignore
-    const __VLS_14 = __VLS_asFunctionalComponent1(__VLS_13, new __VLS_13({
-        id: "s1",
-        ...{ class: "app-section" },
-        ...{ style: {} },
-    }));
-    const __VLS_15 = __VLS_14({
-        id: "s1",
-        ...{ class: "app-section" },
-        ...{ style: {} },
-    }, ...__VLS_functionalComponentArgsRest(__VLS_14));
-    /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
-    const __VLS_18 = PlansSection;
-    // @ts-ignore
-    const __VLS_19 = __VLS_asFunctionalComponent1(__VLS_18, new __VLS_18({
-        id: "s2",
-        ...{ class: "app-section" },
-        ...{ style: {} },
-    }));
-    const __VLS_20 = __VLS_19({
-        id: "s2",
-        ...{ class: "app-section" },
-        ...{ style: {} },
-    }, ...__VLS_functionalComponentArgsRest(__VLS_19));
-    /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
-    const __VLS_23 = TrackerSection;
+    const __VLS_23 = ClockSection;
     // @ts-ignore
     const __VLS_24 = __VLS_asFunctionalComponent1(__VLS_23, new __VLS_23({
-        id: "s3",
+        id: "s1",
         ...{ class: "app-section" },
         ...{ style: {} },
     }));
     const __VLS_25 = __VLS_24({
-        id: "s3",
+        id: "s1",
         ...{ class: "app-section" },
         ...{ style: {} },
     }, ...__VLS_functionalComponentArgsRest(__VLS_24));
     /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
-    const __VLS_28 = CalendarSection;
+    const __VLS_28 = PlansSection;
     // @ts-ignore
     const __VLS_29 = __VLS_asFunctionalComponent1(__VLS_28, new __VLS_28({
-        id: "s4",
+        id: "s2",
         ...{ class: "app-section" },
         ...{ style: {} },
     }));
     const __VLS_30 = __VLS_29({
-        id: "s4",
+        id: "s2",
         ...{ class: "app-section" },
         ...{ style: {} },
     }, ...__VLS_functionalComponentArgsRest(__VLS_29));
     /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
-    const __VLS_33 = WeekSection;
+    const __VLS_33 = TrackerSection;
     // @ts-ignore
     const __VLS_34 = __VLS_asFunctionalComponent1(__VLS_33, new __VLS_33({
-        id: "s5",
+        id: "s3",
         ...{ class: "app-section" },
         ...{ style: {} },
     }));
     const __VLS_35 = __VLS_34({
-        id: "s5",
+        id: "s3",
         ...{ class: "app-section" },
         ...{ style: {} },
     }, ...__VLS_functionalComponentArgsRest(__VLS_34));
     /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
+    const __VLS_38 = CalendarSection;
+    // @ts-ignore
+    const __VLS_39 = __VLS_asFunctionalComponent1(__VLS_38, new __VLS_38({
+        id: "s4",
+        ...{ class: "app-section" },
+        ...{ style: {} },
+    }));
+    const __VLS_40 = __VLS_39({
+        id: "s4",
+        ...{ class: "app-section" },
+        ...{ style: {} },
+    }, ...__VLS_functionalComponentArgsRest(__VLS_39));
+    /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
+    const __VLS_43 = WeekSection;
+    // @ts-ignore
+    const __VLS_44 = __VLS_asFunctionalComponent1(__VLS_43, new __VLS_43({
+        id: "s5",
+        ...{ class: "app-section" },
+        ...{ style: {} },
+    }));
+    const __VLS_45 = __VLS_44({
+        id: "s5",
+        ...{ class: "app-section" },
+        ...{ style: {} },
+    }, ...__VLS_functionalComponentArgsRest(__VLS_44));
+    /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
     if (__VLS_ctx.pluginStoreOpen) {
-        const __VLS_38 = PluginStore;
+        const __VLS_48 = PluginStore;
         // @ts-ignore
-        const __VLS_39 = __VLS_asFunctionalComponent1(__VLS_38, new __VLS_38({
+        const __VLS_49 = __VLS_asFunctionalComponent1(__VLS_48, new __VLS_48({
             ...{ 'onClose': {} },
         }));
-        const __VLS_40 = __VLS_39({
+        const __VLS_50 = __VLS_49({
             ...{ 'onClose': {} },
-        }, ...__VLS_functionalComponentArgsRest(__VLS_39));
-        let __VLS_43;
-        const __VLS_44 = ({ close: {} },
+        }, ...__VLS_functionalComponentArgsRest(__VLS_49));
+        let __VLS_53;
+        const __VLS_54 = ({ close: {} },
             { onClose: (__VLS_ctx.onPluginStoreClose) });
-        var __VLS_41;
-        var __VLS_42;
+        var __VLS_51;
+        var __VLS_52;
     }
 }
 // @ts-ignore

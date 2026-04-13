@@ -1,6 +1,9 @@
 <template>
   <div id="app-root" :class="{ 'dashboard-ready': dashboardReady }">
-    <AuthTerminal v-if="!auth.isLoggedIn" @login="onLogin" />
+    <template v-if="!auth.isLoggedIn">
+      <ShowcaseHome v-if="entryMode === 'showcase'" @login="openTerminal" @demo="loginDemo" />
+      <AuthTerminal v-else @login="onLogin" @demo="loginDemo" @back="openShowcase" />
+    </template>
     <template v-else>
       <Transition name="loader-fade">
         <div v-if="isDashboardLoading" class="app-loader">
@@ -61,7 +64,8 @@
 </template>
 
 <script setup lang="ts">
-import type { AuthAccount } from '@plainlist/shared';
+import type { AuthAccount, AuthSuccessResponse } from '@plainlist/shared';
+import { DEMO_ACCOUNT } from '@plainlist/shared';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
@@ -71,6 +75,7 @@ import { usePluginsStore } from '@/features/plugins/model/usePluginsStore';
 import { useApi } from '@/shared/api/useApi';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 import AuthTerminal from '@/widgets/auth/AuthTerminal.vue';
+import ShowcaseHome from '@/widgets/auth/ShowcaseHome.vue';
 import PluginStore from '@/widgets/plugins/PluginStore.vue';
 import CalendarSection from '@/widgets/sections/CalendarSection.vue';
 import ClockSection from '@/widgets/sections/ClockSection.vue';
@@ -84,9 +89,10 @@ const checks = useChecksStore();
 const localeStore = useLocaleStore();
 const pluginsStore = usePluginsStore();
 const i18n = useI18nStore();
-const { get } = useApi();
+const { get, post } = useApi();
 
 const pluginStoreOpen = ref(false);
+const entryMode = ref<'showcase' | 'terminal'>('showcase');
 const activeSection = ref('s1');
 const isDashboardLoading = ref(false);
 const dashboardReady = ref(false);
@@ -111,6 +117,27 @@ const loaderText = computed(() => i18n.t('app.loader', 'Loading your dashboard..
 
 function t(key: string, fallback: string) {
   return i18n.t(key, fallback);
+}
+
+function openTerminal() {
+  entryMode.value = 'terminal';
+}
+
+function openShowcase() {
+  entryMode.value = 'showcase';
+}
+
+async function loginDemo() {
+  try {
+    const response = await post<AuthSuccessResponse>('/auth/login', {
+      username: DEMO_ACCOUNT.username,
+      password: DEMO_ACCOUNT.password,
+    });
+    auth.setAuth(response.token, response.username, response.isAdmin);
+    await loadDashboard();
+  } catch {
+    entryMode.value = 'terminal';
+  }
 }
 
 function scrollTo(id: string) {
@@ -175,6 +202,7 @@ async function logout() {
   checks.clear();
   pluginsStore.clear();
   auth.logout();
+  entryMode.value = 'showcase';
 }
 
 function onPluginStoreClose() {
@@ -195,6 +223,7 @@ onMounted(async () => {
       dashboardReady.value = false;
       isDashboardLoading.value = false;
       auth.logout();
+      entryMode.value = 'showcase';
     }
   }
 });

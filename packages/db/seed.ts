@@ -7,7 +7,9 @@ async function main(): Promise<void> {
   const pool = createPool(config);
 
   try {
+    console.log('Refreshing PlainList demo dataset...');
     await runDemoSeed(pool);
+    console.log('PlainList demo dataset is ready.');
   } finally {
     await pool.end();
   }

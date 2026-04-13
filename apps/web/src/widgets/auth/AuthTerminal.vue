@@ -21,10 +21,17 @@
           <span class="term-shortcut-title">{{ t('auth.action.register', 'Register') }}</span>
           <span class="term-shortcut-cmd">pl new</span>
         </button>
+        <button class="term-shortcut-btn" type="button" @click="emit('demo')">
+          <span class="term-shortcut-title">{{ t('auth.action.demo', 'Demo') }}</span>
+          <span class="term-shortcut-cmd">pl demo</span>
+        </button>
       </div>
       <div class="term-shortcuts-subtitle">
         {{ helperCaption }}
       </div>
+      <button class="term-back-btn" type="button" @click="emit('back')">
+        {{ t('auth.back_to_showcase', 'Back to showcase') }}
+      </button>
     </div>
     <div id="term-body">
       <div
@@ -51,6 +58,7 @@
 
 <script setup lang="ts">
 import type { AuthAccount, AuthSuccessResponse } from '@plainlist/shared';
+import { DEMO_ACCOUNT } from '@plainlist/shared';
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
 import { useLocaleStore } from '@/features/locale/model/useLocaleStore';
@@ -67,6 +75,8 @@ interface TerminalLine {
 
 const emit = defineEmits<{
   login: [];
+  demo: [];
+  back: [];
 }>();
 
 const auth = useAuthStore();
@@ -128,6 +138,7 @@ function welcomeLines(): TerminalLine[] {
     { text: t('auth.command.login', '    pl cd <name>    log in to an account'), type: 'out' },
     { text: t('auth.command.register', '    pl new <name>   create an account'), type: 'out' },
     { text: t('auth.command.list', '    pl ls           list accounts'), type: 'out' },
+    { text: t('auth.command.demo', '    pl demo         enter the prepared showcase account'), type: 'out' },
     { text: t('auth.command.onboard', '    pl onboard      guided setup'), type: 'out' },
     { text: t('auth.command.help', '    /help           show help'), type: 'out' },
     { text: t('auth.command.clear', '    /clear          clear terminal'), type: 'out' },
@@ -227,6 +238,25 @@ async function handleNameEntry(value: string, onboard = false) {
   pendingName.value = normalized;
   startPasswordPrompt(onboard ? 'onboard-pass' : 'new-pass');
   print(t('auth.set_passphrase', '  set a passphrase (at least 3 chars):'), 'out');
+}
+
+async function loginDemoAccount() {
+  try {
+    const response = await post<AuthSuccessResponse>('/auth/login', {
+      username: DEMO_ACCOUNT.username,
+      password: DEMO_ACCOUNT.password,
+    });
+    await completeAuth(response, DEMO_ACCOUNT.username, [
+      t('auth.demo_success', '  demo account ready. explore the dashboard.'),
+    ]);
+  } catch {
+    print(t('auth.demo_failed', '  demo login failed. run the demo seed and try again.'), 'err');
+    print(t('auth.demo_failed_hint', '  expected demo account: {username} / {password}', {
+      username: DEMO_ACCOUNT.username,
+      password: DEMO_ACCOUNT.password,
+    }), 'out');
+    resetState();
+  }
 }
 
 async function handleRegistration(value: string, onboard = false) {
@@ -349,6 +379,11 @@ async function executeCommand(value: string) {
     } else {
       print(t('auth.no_accounts', '  no accounts yet.'), 'out');
     }
+    return;
+  }
+
+  if (sub === 'demo') {
+    await loginDemoAccount();
     return;
   }
 

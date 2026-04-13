@@ -1,5 +1,6 @@
-/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
-/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
+/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+import { DEMO_ACCOUNT } from '@plainlist/shared';
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
 import { useLocaleStore } from '@/features/locale/model/useLocaleStore';
@@ -57,6 +58,7 @@ function welcomeLines() {
         { text: t('auth.command.login', '    pl cd <name>    log in to an account'), type: 'out' },
         { text: t('auth.command.register', '    pl new <name>   create an account'), type: 'out' },
         { text: t('auth.command.list', '    pl ls           list accounts'), type: 'out' },
+        { text: t('auth.command.demo', '    pl demo         enter the prepared showcase account'), type: 'out' },
         { text: t('auth.command.onboard', '    pl onboard      guided setup'), type: 'out' },
         { text: t('auth.command.help', '    /help           show help'), type: 'out' },
         { text: t('auth.command.clear', '    /clear          clear terminal'), type: 'out' },
@@ -142,6 +144,25 @@ async function handleNameEntry(value, onboard = false) {
     pendingName.value = normalized;
     startPasswordPrompt(onboard ? 'onboard-pass' : 'new-pass');
     print(t('auth.set_passphrase', '  set a passphrase (at least 3 chars):'), 'out');
+}
+async function loginDemoAccount() {
+    try {
+        const response = await post('/auth/login', {
+            username: DEMO_ACCOUNT.username,
+            password: DEMO_ACCOUNT.password,
+        });
+        await completeAuth(response, DEMO_ACCOUNT.username, [
+            t('auth.demo_success', '  demo account ready. explore the dashboard.'),
+        ]);
+    }
+    catch {
+        print(t('auth.demo_failed', '  demo login failed. run the demo seed and try again.'), 'err');
+        print(t('auth.demo_failed_hint', '  expected demo account: {username} / {password}', {
+            username: DEMO_ACCOUNT.username,
+            password: DEMO_ACCOUNT.password,
+        }), 'out');
+        resetState();
+    }
 }
 async function handleRegistration(value, onboard = false) {
     if (!pendingName.value) {
@@ -241,6 +262,10 @@ async function executeCommand(value) {
         else {
             print(t('auth.no_accounts', '  no accounts yet.'), 'out');
         }
+        return;
+    }
+    if (sub === 'demo') {
+        await loginDemoAccount();
         return;
     }
     if (sub === 'onboard') {
@@ -419,11 +444,41 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
     ...{ class: "term-shortcut-cmd" },
 });
 /** @type {__VLS_StyleScopedClasses['term-shortcut-cmd']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.emit('demo');
+            // @ts-ignore
+            [t, emit,];
+        } },
+    ...{ class: "term-shortcut-btn" },
+    type: "button",
+});
+/** @type {__VLS_StyleScopedClasses['term-shortcut-btn']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+    ...{ class: "term-shortcut-title" },
+});
+/** @type {__VLS_StyleScopedClasses['term-shortcut-title']} */ ;
+(__VLS_ctx.t('auth.action.demo', 'Demo'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+    ...{ class: "term-shortcut-cmd" },
+});
+/** @type {__VLS_StyleScopedClasses['term-shortcut-cmd']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "term-shortcuts-subtitle" },
 });
 /** @type {__VLS_StyleScopedClasses['term-shortcuts-subtitle']} */ ;
 (__VLS_ctx.helperCaption);
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.emit('back');
+            // @ts-ignore
+            [t, emit, helperCaption,];
+        } },
+    ...{ class: "term-back-btn" },
+    type: "button",
+});
+/** @type {__VLS_StyleScopedClasses['term-back-btn']} */ ;
+(__VLS_ctx.t('auth.back_to_showcase', 'Back to showcase'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     id: "term-body",
 });
@@ -435,7 +490,7 @@ for (const [line, index] of __VLS_vFor((__VLS_ctx.lines))) {
     /** @type {__VLS_StyleScopedClasses['term-line']} */ ;
     (line.text);
     // @ts-ignore
-    [t, helperCaption, lines,];
+    [t, lines,];
 }
 if (!__VLS_ctx.closing) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({

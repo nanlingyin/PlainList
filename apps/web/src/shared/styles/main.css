@@ -209,6 +209,21 @@
       color: var(--mid);
       text-align: right;
     }
+    .term-back-btn {
+      border: none;
+      background: none;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 0;
+      align-self: flex-end;
+    }
+    .term-back-btn:hover {
+      color: var(--dark);
+    }
     .term-line { white-space: pre-wrap; color: #111; }
     .term-line.term-out { color: #777; }
     .term-line.term-err { color: #AAAAAA; }

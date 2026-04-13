@@ -115,4 +115,4 @@
 
 可在比赛报名材料中使用如下简版说明：
 
-> 本项目参赛名称为“序刻清单 PlainList”，是一款面向个人习惯养成与任务规划的多尺度时间管理 Web 平台。项目主要功能与页面交互由团队自主设计开发，前端采用 Vue 3、Pinia 与 ECharts，后端采用 Express、MySQL2、Zod、bcryptjs、jsonwebtoken 等开源组件，工程化部分使用 Vite、TypeScript、Vitest、ESLint 等工具完成构建与测试。开源组件主要用于框架支撑、图表渲染、数据校验、鉴权和工程化流程，项目核心业务逻辑、界面组织与交互实现为自主完成。
+> 。本项目参赛名称为“序刻清单 PlainList”，是一款面向个人习惯养成与任务规划的多尺度时间管理 Web 平台。项目主要功能与页面交互由团队自主设计开发，前端采用 Vue 3、Pinia 与 ECharts，后端采用 Express、MySQL2、Zod、bcryptjs、jsonwebtoken 等开源组件，工程化部分使用 Vite、TypeScript、Vitest、ESLint 等工具完成构建与测试。开源组件主要用于框架支撑、图表渲染、数据校验、鉴权和工程化流程，项目核心业务逻辑、界面组织与交互实现为自主完成

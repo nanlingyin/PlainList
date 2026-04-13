@@ -52,4 +52,14 @@ describe('useAuthStore', () => {
     expect(auth.isLoggedIn).toBe(false);
     expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('pl_token');
   });
+
+  it('restores token from session storage before user hydration', () => {
+    sessionStorageMock.setItem('pl_token', 'demo-token');
+
+    const auth = useAuthStore();
+
+    expect(auth.token).toBe('demo-token');
+    expect(auth.currentUser).toBeNull();
+    expect(auth.isLoggedIn).toBe(false);
+  });
 });
