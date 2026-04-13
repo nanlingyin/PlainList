@@ -1,5 +1,5 @@
 <template>
-  <section id="s5" class="section">
+  <section class="section">
     <div class="week-header">
       <span class="week-title">{{ t('week.prefix', 'Week') }} {{ pad(weekNumber) }}</span>
       <span class="week-range">{{ rangeLabel }}</span>
@@ -10,7 +10,7 @@
         v-for="(day, index) in weekDays"
         :key="index"
         class="week-day-card"
-        :class="{ 'today-card': day.isToday }"
+        :class="weekDayClasses(day)"
       >
         <div class="wdc-label">{{ day.label }}</div>
         <div class="wdc-date-num">{{ pad(day.date.getDate()) }}</div>
@@ -21,15 +21,38 @@
         <div class="wdc-tasks">
           {{ day.pct !== null
             ? `${Math.round(totalPlans * (day.pct / 100))}/${totalPlans}`
-            : t('week.upcoming', 'upcoming') }}
+            : totalPlans
+              ? t('week.upcoming', 'upcoming')
+              : t('week.no_data', 'no plans') }}
         </div>
       </div>
     </div>
 
+    <div class="week-chart-switch">
+      <button
+        v-for="tab in chartTabs"
+        :key="tab.key"
+        class="week-chart-switch-btn"
+        :class="{ active: activeChart === tab.key }"
+        @click="activeChart = tab.key"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
     <div class="charts-row">
-      <div ref="radarEl" class="chart chart-radar" />
-      <div ref="barEl" class="chart chart-bar" />
-      <div ref="lineEl" class="chart chart-line" />
+      <div class="chart-card" :class="{ active: activeChart === 'radar' }">
+        <div class="chart-card-label">{{ t('week.chart.radar', 'Habit balance') }}</div>
+        <div ref="radarEl" class="chart chart-radar" />
+      </div>
+      <div class="chart-card" :class="{ active: activeChart === 'bar' }">
+        <div class="chart-card-label">{{ t('week.chart.bar', 'Daily completion') }}</div>
+        <div ref="barEl" class="chart chart-bar" />
+      </div>
+      <div class="chart-card" :class="{ active: activeChart === 'line' }">
+        <div class="chart-card-label">{{ t('week.chart.line', 'Trend against prior weeks') }}</div>
+        <div ref="lineEl" class="chart chart-line" />
+      </div>
     </div>
 
     <div class="week-insight">
@@ -58,7 +81,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { usePlansStore } from '@/features/plans/model/usePlansStore'
 import { useChecksStore } from '@/features/checks/model/useChecksStore'
@@ -74,6 +97,7 @@ function t(key, fallback, params) { return i18n.t(key, fallback, params) }
 const radarEl = ref(null)
 const barEl = ref(null)
 const lineEl = ref(null)
+const activeChart = ref('bar')
 
 let chartRadar = null
 let chartBar = null
@@ -114,6 +138,11 @@ const rangeLabel = computed(() => {
 })
 
 const totalPlans = computed(() => plansStore.plans.length)
+const chartTabs = computed(() => [
+  { key: 'bar', label: t('week.chart.bar_short', 'Day') },
+  { key: 'line', label: t('week.chart.line_short', 'Trend') },
+  { key: 'radar', label: t('week.chart.radar_short', 'Habits') },
+])
 
 function pctForDate(date) {
   const all = plansStore.plans
@@ -129,11 +158,15 @@ function pctForDate(date) {
 const weekDays = computed(() => Array.from({ length: 7 }, (_, index) => {
   const date = new Date(monday.value)
   date.setDate(monday.value.getDate() + index)
+  const pct = pctForDate(date)
   return {
     date,
     label: dayNamesShort.value[date.getDay()],
     isToday: date.toDateString() === today.toDateString(),
-    pct: pctForDate(date),
+    isFuture: pct === null && date > today,
+    isComplete: pct === 100,
+    isMissed: pct === 0,
+    pct,
   }
 }))
 
@@ -169,6 +202,15 @@ const streak = computed(() => {
 })
 
 const habits = computed(() => plansStore.plans.filter((plan) => plan.type === 'habit'))
+
+function weekDayClasses(day) {
+  return {
+    'today-card': day.isToday,
+    'future-card': day.isFuture,
+    'complete-card': day.isComplete,
+    'missed-card': day.isMissed && !day.isToday,
+  }
+}
 
 const priorWeeks = [
   [65, 72, 68, 55, 80, 75, 70],
@@ -301,6 +343,12 @@ function initCharts() {
   chartLine?.setOption(buildLineOption())
 }
 
+function resizeCharts() {
+  chartRadar?.resize()
+  chartBar?.resize()
+  chartLine?.resize()
+}
+
 watch([pcts, habits], () => {
   chartRadar?.setOption(buildRadarOption(), true)
   chartBar?.setOption(buildBarOption(), true)
@@ -313,6 +361,15 @@ watch(() => ({ ...pluginsStore.themeVars }), () => {
   chartLine?.setOption(buildLineOption(), true)
 }, { deep: true })
 
+watch(activeChart, () => {
+  nextTick(() => {
+    resizeCharts()
+    chartRadar?.setOption(buildRadarOption(), true)
+    chartBar?.setOption(buildBarOption(), true)
+    chartLine?.setOption(buildLineOption(), true)
+  })
+})
+
 function onThemeChanged() {
   chartRadar?.setOption(buildRadarOption(), true)
   chartBar?.setOption(buildBarOption(), true)
@@ -322,10 +379,12 @@ function onThemeChanged() {
 onMounted(() => {
   initCharts()
   document.addEventListener('theme:changed', onThemeChanged)
+  window.addEventListener('resize', resizeCharts)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('theme:changed', onThemeChanged)
+  window.removeEventListener('resize', resizeCharts)
   chartRadar?.dispose()
   chartBar?.dispose()
   chartLine?.dispose()
@@ -351,11 +410,28 @@ onBeforeUnmount(() => {
   padding: .6rem .4rem;
   text-align: center;
   background: var(--surface);
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.week-day-card:hover {
+  border-color: color-mix(in srgb, var(--mid) 30%, var(--surface));
+  transform: translateY(-1px);
 }
 .week-day-card.today-card {
   background: var(--dark);
   border-color: var(--dark);
   color: var(--bg);
+}
+.week-day-card.future-card {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--surface) 70%, var(--bg));
+  color: var(--muted);
+}
+.week-day-card.complete-card:not(.today-card) {
+  border-color: color-mix(in srgb, var(--dark) 26%, var(--surface));
+  background: color-mix(in srgb, var(--surface) 90%, var(--dark) 5%);
+}
+.week-day-card.missed-card:not(.today-card) {
+  border-color: color-mix(in srgb, var(--faint) 92%, var(--dark));
 }
 .wdc-label    { font-size: .6rem; font-weight: 600; letter-spacing: .05em; color: inherit; opacity: .6; }
 .wdc-date-num { font-size: 1.1rem; font-weight: 700; margin: .2rem 0; }
@@ -371,11 +447,48 @@ onBeforeUnmount(() => {
 .wdc-bar-fill  { height: 100%; background: currentColor; border-radius: 2px; transition: width .3s; }
 .wdc-tasks     { font-size: .6rem; opacity: .5; }
 
+.week-chart-switch {
+  display: none;
+  gap: .55rem;
+  margin-bottom: 1rem;
+}
+.week-chart-switch-btn {
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 84%, var(--bg));
+  color: var(--mid);
+  padding: .45rem .8rem;
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.week-chart-switch-btn.active {
+  border-color: var(--dark);
+  background: var(--dark);
+  color: var(--bg);
+}
+
 .charts-row {
   display: grid;
   grid-template-columns: 1fr 1.5fr 1.5fr;
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+.chart-card {
+  border: 1px solid var(--faint);
+  border-radius: 12px;
+  padding: .85rem .95rem .7rem;
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+}
+.chart-card-label {
+  margin-bottom: .55rem;
+  font-size: .62rem;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .chart { height: 180px; }
 
@@ -393,4 +506,40 @@ onBeforeUnmount(() => {
 .insight-label { font-size: .7rem; color: var(--muted); margin: .2rem 0; }
 .insight-delta { font-size: .65rem; color: var(--muted); }
 .insight-delta.up { color: var(--mid); }
+
+@media (max-width: 900px) {
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .week-chart-switch {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .charts-row {
+    display: block;
+  }
+
+  .chart-card {
+    display: none;
+    margin-bottom: 1rem;
+  }
+
+  .chart-card.active {
+    display: block;
+  }
+
+  .week-insight {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .week-insight {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

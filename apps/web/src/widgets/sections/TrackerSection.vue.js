@@ -1,5 +1,5 @@
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
 import { computed, onMounted, ref, watch } from 'vue';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
@@ -78,6 +78,23 @@ function planPct(plan) {
     }
     return elapsed ? `${Math.round(done / elapsed * 100)}%` : '—';
 }
+function mobileCellClasses(plan, cell) {
+    if (!cell) {
+        return ['empty'];
+    }
+    const key = dateKey(cell.year, cell.month, cell.day);
+    return [
+        isFuture(cell) ? 'future' : '',
+        checks.isChecked(plan.id, key) ? 'done' : 'missed',
+        key === tKey.value ? 'today' : '',
+    ];
+}
+function onMobileCellClick(plan, cell) {
+    if (!cell || isFuture(cell)) {
+        return;
+    }
+    checks.toggle(plan.id, dateKey(cell.year, cell.month, cell.day));
+}
 const summary = computed(() => {
     const year = trackerYear.value;
     const month = trackerMonth.value;
@@ -145,7 +162,7 @@ function goToday() {
     trackerMonth.value = date.getMonth();
 }
 async function loadMonth() {
-    await checks.fetchMonth(trackerYear.value, trackerMonth.value);
+    await checks.fetchMonth(trackerYear.value, trackerMonth.value + 1);
 }
 watch([trackerYear, trackerMonth], loadMonth);
 onMounted(async () => {
@@ -203,9 +220,10 @@ if (!__VLS_ctx.plans.plans.length) {
 }
 else {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "tracker-table-wrap" },
+        ...{ class: "tracker-table-wrap tracker-desktop" },
     });
     /** @type {__VLS_StyleScopedClasses['tracker-table-wrap']} */ ;
+    /** @type {__VLS_StyleScopedClasses['tracker-desktop']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.table, __VLS_intrinsics.table)({
         ...{ class: "tracker-table" },
     });
@@ -330,6 +348,7 @@ else {
                             ...{ class: ([
                                     wd === 6 && wi !== __VLS_ctx.weeks.length - 1 ? 'tc-week-sep' : '',
                                     !cell ? 'tc-empty' : '',
+                                    cell && __VLS_ctx.isFuture(cell) ? 'tc-future-col' : '',
                                     cell && __VLS_ctx.dateKey(cell.year, cell.month, cell.day) === __VLS_ctx.tKey ? 'tc-today-col' : '',
                                 ]) },
                         });
@@ -362,7 +381,7 @@ else {
                                             return;
                                         __VLS_ctx.checks.toggle(plan.id, __VLS_ctx.dateKey(cell.year, cell.month, cell.day));
                                         // @ts-ignore
-                                        [t, weeks, weeks, weeks, dateKey, dateKey, tKey, groups, isFuture, checks,];
+                                        [t, weeks, weeks, weeks, dateKey, dateKey, tKey, groups, isFuture, isFuture, checks,];
                                     } },
                                 ...{ class: "chk-box" },
                                 ...{ class: (__VLS_ctx.checks.isChecked(plan.id, __VLS_ctx.dateKey(cell.year, cell.month, cell.day)) ? 'chk-done' : '') },
@@ -383,6 +402,105 @@ else {
                 (__VLS_ctx.planPct(plan));
                 // @ts-ignore
                 [planPct,];
+            }
+        }
+        // @ts-ignore
+        [];
+    }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-mobile" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-mobile']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-mobile-weekdays" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-mobile-weekdays']} */ ;
+    for (const [weekday] of __VLS_vFor((__VLS_ctx.weekDayHeaders))) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            key: (weekday),
+            ...{ class: "tracker-mobile-weekday" },
+        });
+        /** @type {__VLS_StyleScopedClasses['tracker-mobile-weekday']} */ ;
+        (weekday);
+        // @ts-ignore
+        [weekDayHeaders,];
+    }
+    for (const [group] of __VLS_vFor((__VLS_ctx.groups))) {
+        (`mobile-${group.label}`);
+        if (group.items.length) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                ...{ class: "tracker-mobile-group" },
+            });
+            /** @type {__VLS_StyleScopedClasses['tracker-mobile-group']} */ ;
+            __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                ...{ class: "tracker-mobile-group-label" },
+            });
+            /** @type {__VLS_StyleScopedClasses['tracker-mobile-group-label']} */ ;
+            (group.label);
+            __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                ...{ class: "tracker-mobile-card-list" },
+            });
+            /** @type {__VLS_StyleScopedClasses['tracker-mobile-card-list']} */ ;
+            for (const [plan] of __VLS_vFor((group.items))) {
+                __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                    key: (`mobile-${plan.id}`),
+                    ...{ class: "tracker-mobile-card" },
+                });
+                /** @type {__VLS_StyleScopedClasses['tracker-mobile-card']} */ ;
+                __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                    ...{ class: "tracker-mobile-card-head" },
+                });
+                /** @type {__VLS_StyleScopedClasses['tracker-mobile-card-head']} */ ;
+                __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                    ...{ class: "tracker-mobile-card-copy" },
+                });
+                /** @type {__VLS_StyleScopedClasses['tracker-mobile-card-copy']} */ ;
+                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+                    ...{ class: (['td-type-dot', plan.type]) },
+                });
+                /** @type {__VLS_StyleScopedClasses['td-type-dot']} */ ;
+                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+                    ...{ class: "tracker-mobile-card-name" },
+                    title: (plan.name),
+                });
+                /** @type {__VLS_StyleScopedClasses['tracker-mobile-card-name']} */ ;
+                (plan.name);
+                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+                    ...{ class: "tracker-mobile-card-pct" },
+                });
+                /** @type {__VLS_StyleScopedClasses['tracker-mobile-card-pct']} */ ;
+                (__VLS_ctx.planPct(plan));
+                __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                    ...{ class: "tracker-mobile-grid" },
+                });
+                /** @type {__VLS_StyleScopedClasses['tracker-mobile-grid']} */ ;
+                for (const [wk, wi] of __VLS_vFor((__VLS_ctx.weeks))) {
+                    (`mobile-grid-${plan.id}-${wi}`);
+                    for (const [cell, wd] of __VLS_vFor((wk))) {
+                        __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+                            ...{ onClick: (...[$event]) => {
+                                    if (!!(!__VLS_ctx.plans.plans.length))
+                                        return;
+                                    if (!(group.items.length))
+                                        return;
+                                    __VLS_ctx.onMobileCellClick(plan, cell);
+                                    // @ts-ignore
+                                    [weeks, groups, planPct, onMobileCellClick,];
+                                } },
+                            key: (`mobile-cell-${plan.id}-${wi}-${wd}`),
+                            ...{ class: "tracker-mobile-cell" },
+                            ...{ class: (__VLS_ctx.mobileCellClasses(plan, cell)) },
+                            disabled: (!cell || __VLS_ctx.isFuture(cell)),
+                        });
+                        /** @type {__VLS_StyleScopedClasses['tracker-mobile-cell']} */ ;
+                        // @ts-ignore
+                        [isFuture, mobileCellClasses,];
+                    }
+                    // @ts-ignore
+                    [];
+                }
+                // @ts-ignore
+                [];
             }
         }
         // @ts-ignore

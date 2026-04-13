@@ -1,5 +1,5 @@
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 const i18n = useI18nStore();

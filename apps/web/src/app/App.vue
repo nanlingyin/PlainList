@@ -54,9 +54,9 @@
 
       <ClockSection id="s1" class="app-section" style="--section-delay: 0ms" />
       <PlansSection id="s2" class="app-section" style="--section-delay: 70ms" />
-      <TrackerSection id="s3" class="app-section" style="--section-delay: 140ms" />
-      <CalendarSection id="s4" class="app-section" style="--section-delay: 210ms" />
-      <WeekSection id="s5" class="app-section" style="--section-delay: 280ms" />
+      <WeekSection id="s3" class="app-section" style="--section-delay: 140ms" />
+      <TrackerSection id="s4" class="app-section" style="--section-delay: 210ms" />
+      <CalendarSection id="s5" class="app-section" style="--section-delay: 280ms" />
 
       <PluginStore v-if="pluginStoreOpen" @close="onPluginStoreClose" />
     </template>
@@ -108,9 +108,9 @@ watch(
 const sections = computed(() => [
   { id: 's1', label: i18n.t('nav.now', 'Now') },
   { id: 's2', label: i18n.t('nav.day', 'Day') },
-  { id: 's3', label: i18n.t('nav.month', 'Month') },
-  { id: 's4', label: i18n.t('nav.year', 'Year') },
-  { id: 's5', label: i18n.t('nav.week', 'Week') },
+  { id: 's3', label: i18n.t('nav.week', 'Week') },
+  { id: 's4', label: i18n.t('nav.month', 'Month') },
+  { id: 's5', label: i18n.t('nav.year', 'Year') },
 ]);
 
 const loaderText = computed(() => i18n.t('app.loader', 'Loading your dashboard...'));

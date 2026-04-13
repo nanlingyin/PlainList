@@ -1,5 +1,5 @@
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
 import { DEMO_ACCOUNT } from '@plainlist/shared';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
@@ -35,9 +35,9 @@ watch(() => localeStore.locale, (locale) => {
 const sections = computed(() => [
     { id: 's1', label: i18n.t('nav.now', 'Now') },
     { id: 's2', label: i18n.t('nav.day', 'Day') },
-    { id: 's3', label: i18n.t('nav.month', 'Month') },
-    { id: 's4', label: i18n.t('nav.year', 'Year') },
-    { id: 's5', label: i18n.t('nav.week', 'Week') },
+    { id: 's3', label: i18n.t('nav.week', 'Week') },
+    { id: 's4', label: i18n.t('nav.month', 'Month') },
+    { id: 's5', label: i18n.t('nav.year', 'Year') },
 ]);
 const loaderText = computed(() => i18n.t('app.loader', 'Loading your dashboard...'));
 function t(key, fallback) {
@@ -334,7 +334,7 @@ else {
         ...{ style: {} },
     }, ...__VLS_functionalComponentArgsRest(__VLS_29));
     /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
-    const __VLS_33 = TrackerSection;
+    const __VLS_33 = WeekSection;
     // @ts-ignore
     const __VLS_34 = __VLS_asFunctionalComponent1(__VLS_33, new __VLS_33({
         id: "s3",
@@ -347,7 +347,7 @@ else {
         ...{ style: {} },
     }, ...__VLS_functionalComponentArgsRest(__VLS_34));
     /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
-    const __VLS_38 = CalendarSection;
+    const __VLS_38 = TrackerSection;
     // @ts-ignore
     const __VLS_39 = __VLS_asFunctionalComponent1(__VLS_38, new __VLS_38({
         id: "s4",
@@ -360,7 +360,7 @@ else {
         ...{ style: {} },
     }, ...__VLS_functionalComponentArgsRest(__VLS_39));
     /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
-    const __VLS_43 = WeekSection;
+    const __VLS_43 = CalendarSection;
     // @ts-ignore
     const __VLS_44 = __VLS_asFunctionalComponent1(__VLS_43, new __VLS_43({
         id: "s5",

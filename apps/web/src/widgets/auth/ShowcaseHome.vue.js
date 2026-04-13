@@ -1,5 +1,5 @@
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
 import { DEMO_ACCOUNT } from '@plainlist/shared';
 import { computed } from 'vue';
 import { useLocaleStore } from '@/features/locale/model/useLocaleStore';

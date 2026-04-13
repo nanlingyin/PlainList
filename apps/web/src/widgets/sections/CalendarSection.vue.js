@@ -1,5 +1,5 @@
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
 import { computed, ref } from 'vue';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
@@ -183,8 +183,11 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['day-popover-bullet']} */ ;
 /** @type {__VLS_StyleScopedClasses['cal-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['day-popover']} */ ;
+/** @type {__VLS_StyleScopedClasses['cal-grid']} */ ;
+/** @type {__VLS_StyleScopedClasses['heatmap-row']} */ ;
+/** @type {__VLS_StyleScopedClasses['heatmap-row-label']} */ ;
+/** @type {__VLS_StyleScopedClasses['heatmap-cells']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
-    id: "s4",
     ...{ class: "section" },
 });
 /** @type {__VLS_StyleScopedClasses['section']} */ ;

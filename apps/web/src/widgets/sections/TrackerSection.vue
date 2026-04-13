@@ -12,7 +12,7 @@
     </div>
 
     <template v-else>
-      <div class="tracker-table-wrap">
+      <div class="tracker-table-wrap tracker-desktop">
         <table class="tracker-table">
           <thead>
             <tr class="tr-week">
@@ -68,6 +68,7 @@
                       :class="[
                         wd === 6 && wi !== weeks.length - 1 ? 'tc-week-sep' : '',
                         !cell ? 'tc-empty' : '',
+                        cell && isFuture(cell) ? 'tc-future-col' : '',
                         cell && dateKey(cell.year, cell.month, cell.day) === tKey ? 'tc-today-col' : '',
                       ]"
                     >
@@ -87,6 +88,43 @@
             </template>
           </tbody>
         </table>
+      </div>
+
+      <div class="tracker-mobile">
+        <div class="tracker-mobile-weekdays">
+          <span v-for="weekday in weekDayHeaders" :key="weekday" class="tracker-mobile-weekday">{{ weekday }}</span>
+        </div>
+
+        <template v-for="group in groups" :key="`mobile-${group.label}`">
+          <div v-if="group.items.length" class="tracker-mobile-group">
+            <div class="tracker-mobile-group-label">{{ group.label }}</div>
+
+            <div class="tracker-mobile-card-list">
+              <div v-for="plan in group.items" :key="`mobile-${plan.id}`" class="tracker-mobile-card">
+                <div class="tracker-mobile-card-head">
+                  <div class="tracker-mobile-card-copy">
+                    <span :class="['td-type-dot', plan.type]"></span>
+                    <span class="tracker-mobile-card-name" :title="plan.name">{{ plan.name }}</span>
+                  </div>
+                  <span class="tracker-mobile-card-pct">{{ planPct(plan) }}</span>
+                </div>
+
+                <div class="tracker-mobile-grid">
+                  <template v-for="(wk, wi) in weeks" :key="`mobile-grid-${plan.id}-${wi}`">
+                    <button
+                      v-for="(cell, wd) in wk"
+                      :key="`mobile-cell-${plan.id}-${wi}-${wd}`"
+                      class="tracker-mobile-cell"
+                      :class="mobileCellClasses(plan, cell)"
+                      :disabled="!cell || isFuture(cell)"
+                      @click.stop="onMobileCellClick(plan, cell)"
+                    ></button>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
 
       <div class="tracker-summary">
@@ -198,6 +236,27 @@ function planPct(plan) {
   return elapsed ? `${Math.round(done / elapsed * 100)}%` : '—'
 }
 
+function mobileCellClasses(plan, cell) {
+  if (!cell) {
+    return ['empty']
+  }
+
+  const key = dateKey(cell.year, cell.month, cell.day)
+  return [
+    isFuture(cell) ? 'future' : '',
+    checks.isChecked(plan.id, key) ? 'done' : 'missed',
+    key === tKey.value ? 'today' : '',
+  ]
+}
+
+function onMobileCellClick(plan, cell) {
+  if (!cell || isFuture(cell)) {
+    return
+  }
+
+  checks.toggle(plan.id, dateKey(cell.year, cell.month, cell.day))
+}
+
 const summary = computed(() => {
   const year = trackerYear.value
   const month = trackerMonth.value
@@ -269,7 +328,7 @@ function goToday() {
 }
 
 async function loadMonth() {
-  await checks.fetchMonth(trackerYear.value, trackerMonth.value)
+  await checks.fetchMonth(trackerYear.value, trackerMonth.value + 1)
 }
 
 watch([trackerYear, trackerMonth], loadMonth)

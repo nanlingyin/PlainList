@@ -1,6 +1,6 @@
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
-/// <reference types="d:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
+/// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import * as echarts from 'echarts';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
@@ -14,6 +14,7 @@ function t(key, fallback, params) { return i18n.t(key, fallback, params); }
 const radarEl = ref(null);
 const barEl = ref(null);
 const lineEl = ref(null);
+const activeChart = ref('bar');
 let chartRadar = null;
 let chartBar = null;
 let chartLine = null;
@@ -44,6 +45,11 @@ const rangeLabel = computed(() => {
     return `${monthNamesShort.value[monday.value.getMonth()]} ${monday.value.getDate()} - ${monthNamesShort.value[sunday.getMonth()]} ${sunday.getDate()}`;
 });
 const totalPlans = computed(() => plansStore.plans.length);
+const chartTabs = computed(() => [
+    { key: 'bar', label: t('week.chart.bar_short', 'Day') },
+    { key: 'line', label: t('week.chart.line_short', 'Trend') },
+    { key: 'radar', label: t('week.chart.radar_short', 'Habits') },
+]);
 function pctForDate(date) {
     const all = plansStore.plans;
     if (!all.length)
@@ -59,11 +65,15 @@ function pctForDate(date) {
 const weekDays = computed(() => Array.from({ length: 7 }, (_, index) => {
     const date = new Date(monday.value);
     date.setDate(monday.value.getDate() + index);
+    const pct = pctForDate(date);
     return {
         date,
         label: dayNamesShort.value[date.getDay()],
         isToday: date.toDateString() === today.toDateString(),
-        pct: pctForDate(date),
+        isFuture: pct === null && date > today,
+        isComplete: pct === 100,
+        isMissed: pct === 0,
+        pct,
     };
 }));
 const pcts = computed(() => weekDays.value.map((day) => day.pct));
@@ -97,6 +107,14 @@ const streak = computed(() => {
     return count;
 });
 const habits = computed(() => plansStore.plans.filter((plan) => plan.type === 'habit'));
+function weekDayClasses(day) {
+    return {
+        'today-card': day.isToday,
+        'future-card': day.isFuture,
+        'complete-card': day.isComplete,
+        'missed-card': day.isMissed && !day.isToday,
+    };
+}
 const priorWeeks = [
     [65, 72, 68, 55, 80, 75, 70],
     [70, 60, 85, 78, 66, 80, 77],
@@ -222,6 +240,11 @@ function initCharts() {
     chartBar?.setOption(buildBarOption());
     chartLine?.setOption(buildLineOption());
 }
+function resizeCharts() {
+    chartRadar?.resize();
+    chartBar?.resize();
+    chartLine?.resize();
+}
 watch([pcts, habits], () => {
     chartRadar?.setOption(buildRadarOption(), true);
     chartBar?.setOption(buildBarOption(), true);
@@ -232,6 +255,14 @@ watch(() => ({ ...pluginsStore.themeVars }), () => {
     chartBar?.setOption(buildBarOption(), true);
     chartLine?.setOption(buildLineOption(), true);
 }, { deep: true });
+watch(activeChart, () => {
+    nextTick(() => {
+        resizeCharts();
+        chartRadar?.setOption(buildRadarOption(), true);
+        chartBar?.setOption(buildBarOption(), true);
+        chartLine?.setOption(buildLineOption(), true);
+    });
+});
 function onThemeChanged() {
     chartRadar?.setOption(buildRadarOption(), true);
     chartBar?.setOption(buildBarOption(), true);
@@ -240,9 +271,11 @@ function onThemeChanged() {
 onMounted(() => {
     initCharts();
     document.addEventListener('theme:changed', onThemeChanged);
+    window.addEventListener('resize', resizeCharts);
 });
 onBeforeUnmount(() => {
     document.removeEventListener('theme:changed', onThemeChanged);
+    window.removeEventListener('resize', resizeCharts);
     chartRadar?.dispose();
     chartBar?.dispose();
     chartLine?.dispose();
@@ -255,11 +288,25 @@ let __VLS_components;
 let __VLS_intrinsics;
 let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['week-day-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-day-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-day-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-day-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['today-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-day-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['today-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['today-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['wdc-bar-track']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-chart-switch-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['insight-delta']} */ ;
+/** @type {__VLS_StyleScopedClasses['charts-row']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-chart-switch']} */ ;
+/** @type {__VLS_StyleScopedClasses['charts-row']} */ ;
+/** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['active']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-insight']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-insight']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
-    id: "s5",
     ...{ class: "section" },
 });
 /** @type {__VLS_StyleScopedClasses['section']} */ ;
@@ -286,10 +333,9 @@ for (const [day, index] of __VLS_vFor((__VLS_ctx.weekDays))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         key: (index),
         ...{ class: "week-day-card" },
-        ...{ class: ({ 'today-card': day.isToday }) },
+        ...{ class: (__VLS_ctx.weekDayClasses(day)) },
     });
     /** @type {__VLS_StyleScopedClasses['week-day-card']} */ ;
-    /** @type {__VLS_StyleScopedClasses['today-card']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "wdc-label" },
     });
@@ -320,26 +366,82 @@ for (const [day, index] of __VLS_vFor((__VLS_ctx.weekDays))) {
     /** @type {__VLS_StyleScopedClasses['wdc-tasks']} */ ;
     (day.pct !== null
         ? `${Math.round(__VLS_ctx.totalPlans * (day.pct / 100))}/${__VLS_ctx.totalPlans}`
-        : __VLS_ctx.t('week.upcoming', 'upcoming'));
+        : __VLS_ctx.totalPlans
+            ? __VLS_ctx.t('week.upcoming', 'upcoming')
+            : __VLS_ctx.t('week.no_data', 'no plans'));
     // @ts-ignore
-    [t, t, pad, pad, weekNumber, rangeLabel, weekDays, totalPlans, totalPlans,];
+    [t, t, t, pad, pad, weekNumber, rangeLabel, weekDays, weekDayClasses, totalPlans, totalPlans, totalPlans,];
+}
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "week-chart-switch" },
+});
+/** @type {__VLS_StyleScopedClasses['week-chart-switch']} */ ;
+for (const [tab] of __VLS_vFor((__VLS_ctx.chartTabs))) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+        ...{ onClick: (...[$event]) => {
+                __VLS_ctx.activeChart = tab.key;
+                // @ts-ignore
+                [chartTabs, activeChart,];
+            } },
+        key: (tab.key),
+        ...{ class: "week-chart-switch-btn" },
+        ...{ class: ({ active: __VLS_ctx.activeChart === tab.key }) },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-chart-switch-btn']} */ ;
+    /** @type {__VLS_StyleScopedClasses['active']} */ ;
+    (tab.label);
+    // @ts-ignore
+    [activeChart,];
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "charts-row" },
 });
 /** @type {__VLS_StyleScopedClasses['charts-row']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "chart-card" },
+    ...{ class: ({ active: __VLS_ctx.activeChart === 'radar' }) },
+});
+/** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['active']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "chart-card-label" },
+});
+/** @type {__VLS_StyleScopedClasses['chart-card-label']} */ ;
+(__VLS_ctx.t('week.chart.radar', 'Habit balance'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div)({
     ref: "radarEl",
     ...{ class: "chart chart-radar" },
 });
 /** @type {__VLS_StyleScopedClasses['chart']} */ ;
 /** @type {__VLS_StyleScopedClasses['chart-radar']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "chart-card" },
+    ...{ class: ({ active: __VLS_ctx.activeChart === 'bar' }) },
+});
+/** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['active']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "chart-card-label" },
+});
+/** @type {__VLS_StyleScopedClasses['chart-card-label']} */ ;
+(__VLS_ctx.t('week.chart.bar', 'Daily completion'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div)({
     ref: "barEl",
     ...{ class: "chart chart-bar" },
 });
 /** @type {__VLS_StyleScopedClasses['chart']} */ ;
 /** @type {__VLS_StyleScopedClasses['chart-bar']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "chart-card" },
+    ...{ class: ({ active: __VLS_ctx.activeChart === 'line' }) },
+});
+/** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['active']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "chart-card-label" },
+});
+/** @type {__VLS_StyleScopedClasses['chart-card-label']} */ ;
+(__VLS_ctx.t('week.chart.line', 'Trend against prior weeks'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div)({
     ref: "lineEl",
     ...{ class: "chart chart-line" },
@@ -429,6 +531,6 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['insight-delta']} */ ;
 (__VLS_ctx.t('week.days_in_a_row', 'days in a row'));
 // @ts-ignore
-[t, t, t, t, t, t, t, t, avg, activeDays, activeDays, bestDay, maxPct, streak,];
+[t, t, t, t, t, t, t, t, t, t, t, activeChart, activeChart, activeChart, avg, activeDays, activeDays, bestDay, maxPct, streak,];
 const __VLS_export = (await import('vue')).defineComponent({});
 export default {};

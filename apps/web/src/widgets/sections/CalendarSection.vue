@@ -1,5 +1,5 @@
 <template>
-  <section id="s4" class="section">
+  <section class="section">
     <div class="section-header">
       <h2 class="section-title">{{ year }}</h2>
       <div class="year-nav">
@@ -437,6 +437,23 @@ function heatmapLevel(habitId, week) {
     left: 12px !important;
     right: 12px !important;
     width: auto !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .cal-grid { grid-template-columns: 1fr; }
+  .heatmap-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .4rem;
+  }
+  .heatmap-row-label {
+    width: auto;
+  }
+  .heatmap-cells {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 }
 </style>
