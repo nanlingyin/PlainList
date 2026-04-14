@@ -59,12 +59,13 @@ function cardStyle(vars) {
     return {
         background: vars['--surface'],
         border: `1px solid ${vars['--faint']}`,
-        borderRadius: '6px',
-        padding: '16px',
+        borderRadius: '16px',
+        padding: '18px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
-        maxWidth: '280px',
+        gap: '12px',
+        maxWidth: '320px',
+        boxShadow: `0 18px 42px ${vars['--shadow-color'] || 'rgba(15, 23, 42, 0.12)'}`,
     };
 }
 async function install() {
@@ -286,7 +287,7 @@ else {
                 ...{ class: "pv-swatch-colors" },
             });
             /** @type {__VLS_StyleScopedClasses['pv-swatch-colors']} */ ;
-            for (const [colorKey] of __VLS_vFor((['--bg', '--surface', '--dark', '--mid', '--muted']))) {
+            for (const [colorKey] of __VLS_vFor((['--bg', '--surface', '--accent', '--dark', '--muted']))) {
                 __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
                     key: (colorKey),
                     ...{ style: ({ background: theme.vars[colorKey] }) },

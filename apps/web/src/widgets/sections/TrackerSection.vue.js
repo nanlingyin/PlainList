@@ -331,12 +331,12 @@ if (__VLS_ctx.rewardSummary) {
         ...{ class: "tracker-reward-label" },
     });
     /** @type {__VLS_StyleScopedClasses['tracker-reward-label']} */ ;
-    (__VLS_ctx.t('reward.badges', 'Badges'));
+    (__VLS_ctx.t('reward.achievements', 'Achievements'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
         ...{ class: "tracker-reward-value" },
     });
     /** @type {__VLS_StyleScopedClasses['tracker-reward-value']} */ ;
-    (__VLS_ctx.rewardSummary.earnedBadges);
+    (__VLS_ctx.rewardSummary.earnedAchievements ?? __VLS_ctx.rewardSummary.earnedBadges);
 }
 if (!__VLS_ctx.plans.plans.length) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
@@ -379,7 +379,7 @@ else {
         (__VLS_ctx.t('tracker.week_prefix', 'Week'));
         (wi + 1);
         // @ts-ignore
-        [prevMonth, monthLabel, nextMonth, goToday, t, t, t, t, t, t, t, t, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, plans, weeks, weekHasToday,];
+        [prevMonth, monthLabel, nextMonth, goToday, t, t, t, t, t, t, t, t, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, plans, weeks, weekHasToday,];
     }
     __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
         ...{ class: "th-pct col-pct" },

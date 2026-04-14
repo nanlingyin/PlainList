@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildRewardModel, buildRewardOverview, buildRewardPeriodSummary, calculateFocusReward, getLevelProgress } from './logic';
 
 describe('reward logic', () => {
-  it('derives points, recent events, and badges from focus sessions and perfect days', () => {
+  it('derives points, recent events, and achievements from focus sessions and check-in days', () => {
     const model = buildRewardModel(
       [
         { id: 1, createdAt: '2026-04-01T00:00:00.000Z' },
@@ -50,9 +50,10 @@ describe('reward logic', () => {
     expect(overview.perfectDays).toBe(3);
     expect(overview.longestPerfectStreak).toBe(3);
     expect(overview.level).toBeGreaterThanOrEqual(1);
-    expect(overview.badges.find((badge) => badge.id === 'first-focus')?.earned).toBe(true);
-    expect(overview.badges.find((badge) => badge.id === 'perfect-day-1')?.earned).toBe(true);
-    expect(overview.badges.find((badge) => badge.id === 'streak-3')?.earned).toBe(true);
+    expect(overview.achievements.find((achievement) => achievement.id === 'checkin-3')?.earned).toBe(true);
+    expect(overview.achievements.find((achievement) => achievement.id === 'streak-3')?.earned).toBe(true);
+    expect(overview.achievements.find((achievement) => achievement.id === 'focus-5')?.earned).toBe(false);
+    expect(overview.badges).toHaveLength(overview.achievements.length);
     expect(overview.recentEvents[0]?.kind).toBe('perfect-day');
   });
 
@@ -100,6 +101,69 @@ describe('reward logic', () => {
     expect(summary.completedFocusSessions).toBe(1);
     expect(summary.perfectDays).toBe(1);
     expect(summary.points).toBe(25);
+    expect(summary.earnedAchievements).toBe(0);
+    expect(summary.earnedBadges).toBe(summary.earnedAchievements);
+  });
+
+  it('tracks check-in day achievements separately from perfect-day streaks', () => {
+    const model = buildRewardModel(
+      [
+        { id: 1, createdAt: '2026-04-01T00:00:00.000Z' },
+        { id: 2, createdAt: '2026-04-01T00:00:00.000Z' },
+      ],
+      [
+        { planId: 1, date: '2026-04-01', done: true },
+        { planId: 2, date: '2026-04-01', done: false },
+        { planId: 1, date: '2026-04-02', done: true },
+        { planId: 2, date: '2026-04-02', done: false },
+        { planId: 1, date: '2026-04-03', done: true },
+        { planId: 2, date: '2026-04-03', done: false },
+      ],
+      [],
+      [],
+      [],
+      '2026-04-03',
+    );
+
+    const overview = buildRewardOverview(model);
+    expect(model.checkinDays).toBe(3);
+    expect(model.longestCheckinStreak).toBe(3);
+    expect(overview.perfectDays).toBe(0);
+    expect(overview.currentPerfectStreak).toBe(0);
+    expect(overview.achievements.find((achievement) => achievement.id === 'checkin-3')?.earned).toBe(true);
+    expect(overview.achievements.find((achievement) => achievement.id === 'streak-3')?.earned).toBe(true);
+  });
+
+  it('unlocks level achievements and counts them inside period summaries', () => {
+    const model = buildRewardModel(
+      [{ id: 1, createdAt: '2026-04-01T00:00:00.000Z' }],
+      [{ planId: 1, date: '2026-04-02', done: true }],
+      [
+        {
+          id: 31,
+          planId: null,
+          planName: null,
+          startedAt: '2026-04-02T08:00:00.000Z',
+          endedAt: '2026-04-02T09:00:00.000Z',
+          focusMinutes: 60,
+          breakMinutes: 5,
+          cycleInterval: 8,
+          pointsAwarded: 29,
+          experienceAwarded: 110,
+        },
+      ],
+      [],
+      [],
+      '2026-04-14',
+    );
+
+    const overview = buildRewardOverview(model);
+    expect(overview.level).toBeGreaterThanOrEqual(2);
+    expect(overview.achievements.find((achievement) => achievement.id === 'level-2')?.earned).toBe(true);
+
+    const summary = buildRewardPeriodSummary(model, 'month', '2026-04-14');
+    expect(summary.earnedAchievements).toBeGreaterThanOrEqual(1);
+    expect(summary.earnedBadges).toBe(summary.earnedAchievements);
   });
 
   it('scales reward output with harder focus settings and caps levels at ten', () => {

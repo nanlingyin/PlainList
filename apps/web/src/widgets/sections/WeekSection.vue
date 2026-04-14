@@ -1,5 +1,5 @@
 <template>
-  <section class="section">
+  <section class="week-section">
     <div class="week-header">
       <span class="week-title">{{ t('week.prefix', 'Week') }} {{ pad(weekNumber) }}</span>
       <span class="week-range">{{ rangeLabel }}</span>
@@ -92,8 +92,8 @@
         <strong class="week-reward-value">{{ rewardSummary.perfectDays }}</strong>
       </div>
       <div class="week-reward-item">
-        <span class="week-reward-label">{{ t('reward.badges', 'Badges') }}</span>
-        <strong class="week-reward-value">{{ rewardSummary.earnedBadges }}</strong>
+        <span class="week-reward-label">{{ t('reward.achievements', 'Achievements') }}</span>
+        <strong class="week-reward-value">{{ rewardSummary.earnedAchievements ?? rewardSummary.earnedBadges }}</strong>
       </div>
     </div>
   </section>
@@ -423,79 +423,147 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.section { padding: 2rem 1.5rem; }
+.week-section {
+  width: min(1240px, 100%);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
 
-.week-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1.5rem; }
-.week-title  { font-size: 1.4rem; font-weight: 700; }
-.week-range  { font-size: .85rem; color: var(--muted); }
+.week-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.week-title {
+  font-family: var(--mono);
+  font-size: clamp(30px, 4vw, 42px);
+  font-weight: 700;
+  letter-spacing: -.04em;
+  color: var(--dark);
+}
+
+.week-range {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: right;
+}
 
 .week-days-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: .6rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
 }
+
 .week-day-card {
   border: 1px solid var(--faint);
-  border-radius: 8px;
-  padding: .6rem .4rem;
+  border-radius: 18px;
+  padding: 16px 14px;
   text-align: center;
-  background: var(--surface);
-  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--shadow-color) 30%, transparent);
+  transition: border-color .15s ease, background .15s ease, transform .15s ease, box-shadow .15s ease;
 }
+
 .week-day-card:hover {
-  border-color: color-mix(in srgb, var(--mid) 30%, var(--surface));
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--surface));
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--shadow-color) 45%, transparent);
 }
+
 .week-day-card.today-card {
-  background: var(--dark);
-  border-color: var(--dark);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--dark) 92%, var(--accent)), var(--dark));
+  border-color: color-mix(in srgb, var(--dark) 88%, black);
   color: var(--bg);
 }
+
 .week-day-card.future-card {
   border-style: dashed;
   background: color-mix(in srgb, var(--surface) 70%, var(--bg));
   color: var(--muted);
+  box-shadow: none;
 }
+
 .week-day-card.complete-card:not(.today-card) {
-  border-color: color-mix(in srgb, var(--dark) 26%, var(--surface));
-  background: color-mix(in srgb, var(--surface) 90%, var(--dark) 5%);
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  background: color-mix(in srgb, var(--surface) 90%, var(--accent-soft));
 }
+
 .week-day-card.missed-card:not(.today-card) {
-  border-color: color-mix(in srgb, var(--faint) 92%, var(--dark));
+  border-color: color-mix(in srgb, var(--warning) 22%, var(--surface));
 }
-.wdc-label    { font-size: .6rem; font-weight: 600; letter-spacing: .05em; color: inherit; opacity: .6; }
-.wdc-date-num { font-size: 1.1rem; font-weight: 700; margin: .2rem 0; }
-.wdc-pct      { font-size: .75rem; font-weight: 600; }
+
+.wdc-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: inherit;
+  opacity: .65;
+}
+
+.wdc-date-num {
+  margin: 8px 0 4px;
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.wdc-pct {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .wdc-bar-track {
-  height: 3px;
-  background: var(--faint);
-  border-radius: 2px;
-  margin: .4rem 0;
+  height: 6px;
+  background: color-mix(in srgb, var(--faint) 88%, var(--surface));
+  border-radius: 999px;
+  margin: 10px 0 8px;
   overflow: hidden;
 }
-.today-card .wdc-bar-track { background: color-mix(in srgb, var(--bg) 20%, transparent); }
-.wdc-bar-fill  { height: 100%; background: currentColor; border-radius: 2px; transition: width .3s; }
-.wdc-tasks     { font-size: .6rem; opacity: .5; }
+
+.today-card .wdc-bar-track {
+  background: color-mix(in srgb, var(--bg) 18%, transparent);
+}
+
+.wdc-bar-fill {
+  height: 100%;
+  background: currentColor;
+  border-radius: 999px;
+  transition: width .3s;
+}
+
+.wdc-tasks {
+  font-size: 10px;
+  line-height: 1.6;
+  opacity: .62;
+}
 
 .week-chart-switch {
   display: none;
-  gap: .55rem;
-  margin-bottom: 1rem;
+  gap: 8px;
 }
+
 .week-chart-switch-btn {
   border: 1px solid var(--faint);
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 84%, var(--bg));
   color: var(--mid);
-  padding: .45rem .8rem;
+  padding: 10px 14px;
   font-family: var(--mono);
-  font-size: .65rem;
+  font-size: 10px;
   letter-spacing: .08em;
   text-transform: uppercase;
   cursor: pointer;
   transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
+
 .week-chart-switch-btn.active {
   border-color: var(--dark);
   background: var(--dark);
@@ -504,64 +572,100 @@ onBeforeUnmount(() => {
 
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr 1.5fr 1.5fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.05fr) minmax(0, 1.05fr);
+  gap: 14px;
 }
+
 .chart-card {
   border: 1px solid var(--faint);
-  border-radius: 12px;
-  padding: .85rem .95rem .7rem;
-  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+  border-radius: 18px;
+  padding: 16px 18px 14px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--shadow-color) 30%, transparent);
 }
+
 .chart-card-label {
-  margin-bottom: .55rem;
-  font-size: .62rem;
-  letter-spacing: .11em;
+  margin-bottom: 10px;
+  font-size: 10px;
+  letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.chart { height: 180px; }
+
+.chart {
+  height: 220px;
+}
 
 .week-insight {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: .8rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
+
 .insight-item {
   border: 1px solid var(--faint);
-  border-radius: 8px;
-  padding: .8rem 1rem;
+  border-radius: 18px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--shadow-color) 24%, transparent);
 }
-.insight-val   { font-size: 1.4rem; font-weight: 700; }
-.insight-label { font-size: .7rem; color: var(--muted); margin: .2rem 0; }
-.insight-delta { font-size: .65rem; color: var(--muted); }
-.insight-delta.up { color: var(--mid); }
 
-.week-reward-summary {
-  margin-top: 1rem;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: .8rem;
+.insight-val {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.03em;
+  color: var(--dark);
 }
-.week-reward-item {
-  border: 1px solid var(--faint);
-  border-radius: 12px;
-  padding: .9rem 1rem;
-  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
-}
-.week-reward-label {
-  display: block;
-  font-size: .62rem;
-  letter-spacing: .11em;
+
+.insight-label {
+  margin-top: 8px;
+  font-size: 10px;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--muted);
 }
+
+.insight-delta {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--mid);
+  line-height: 1.6;
+}
+
+.insight-delta.up {
+  color: var(--accent-strong);
+}
+
+.week-reward-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.week-reward-item {
+  border: 1px solid var(--faint);
+  border-radius: 18px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--shadow-color) 24%, transparent);
+}
+
+.week-reward-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .week-reward-value {
   display: block;
-  margin-top: .45rem;
+  margin-top: 8px;
   font-family: var(--mono);
-  font-size: 1.35rem;
+  font-size: 26px;
+  line-height: 1;
   color: var(--dark);
 }
 
@@ -569,9 +673,37 @@ onBeforeUnmount(() => {
   .charts-row {
     grid-template-columns: 1fr;
   }
+
+  .week-insight,
+  .week-reward-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
+  .week-section {
+    gap: 16px;
+  }
+
+  .week-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .week-range {
+    text-align: left;
+  }
+
+  .week-days-row {
+    grid-template-columns: repeat(7, minmax(88px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+
+  .week-day-card {
+    min-width: 88px;
+  }
+
   .week-chart-switch {
     display: flex;
     flex-wrap: wrap;
@@ -583,27 +715,57 @@ onBeforeUnmount(() => {
 
   .chart-card {
     display: none;
-    margin-bottom: 1rem;
+    margin-bottom: 12px;
   }
 
   .chart-card.active {
     display: block;
   }
-
-  .week-insight {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .week-reward-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 520px) {
-  .week-insight {
-    grid-template-columns: 1fr;
+  .week-title {
+    font-size: 24px;
   }
 
+  .week-days-row {
+    gap: 10px;
+  }
+
+  .week-day-card {
+    min-width: 84px;
+    padding: 14px 12px;
+  }
+
+  .wdc-date-num {
+    font-size: 24px;
+  }
+
+  .chart-card {
+    padding: 14px 14px 12px;
+  }
+
+  .chart {
+    height: 200px;
+  }
+
+  .week-chart-switch {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .week-chart-switch-btn {
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .insight-item,
+  .week-reward-item {
+    padding: 16px;
+  }
+
+  .week-insight,
   .week-reward-summary {
     grid-template-columns: 1fr;
   }

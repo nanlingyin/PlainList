@@ -68,27 +68,52 @@ const __VLS_ctx = {
 let __VLS_components;
 let __VLS_intrinsics;
 let __VLS_directives;
+/** @type {__VLS_StyleScopedClasses['forest-hero-copy']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-hero-metric']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-hero-metric']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-meta-item']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-hero-metric']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-level-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-summary-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-summary-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-panel']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-tree']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-tree']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-header']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-tree']} */ ;
+/** @type {__VLS_StyleScopedClasses['active']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-meta-item']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-meta-item']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-hero']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-main-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-summary-grid']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-hero-metrics']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-hero-copy']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-level-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-panel']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-summary-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-summary-grid']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-hero-metrics']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-meta']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-grid']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-top']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "forest-section" },
 });
 /** @type {__VLS_StyleScopedClasses['forest-section']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-header" },
+    ...{ class: "forest-hero" },
 });
-/** @type {__VLS_StyleScopedClasses['forest-header']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+/** @type {__VLS_StyleScopedClasses['forest-hero']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "forest-hero-copy" },
+});
+/** @type {__VLS_StyleScopedClasses['forest-hero-copy']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "forest-kicker" },
 });
@@ -104,6 +129,34 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
 });
 /** @type {__VLS_StyleScopedClasses['forest-subtitle']} */ ;
 (__VLS_ctx.t('forest.subtitle', 'Each completed focus session grows one tree. Click a tree to inspect that session.'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "forest-hero-metrics" },
+});
+/** @type {__VLS_StyleScopedClasses['forest-hero-metrics']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "forest-hero-metric" },
+});
+/** @type {__VLS_StyleScopedClasses['forest-hero-metric']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+(__VLS_ctx.t('reward.focus_sessions', 'Focus sessions'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
+(__VLS_ctx.focus.forestSessions.length);
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "forest-hero-metric" },
+});
+/** @type {__VLS_StyleScopedClasses['forest-hero-metric']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+(__VLS_ctx.t('forest.balance', 'Points balance'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
+(__VLS_ctx.rewards.overview?.spendablePoints ?? 0);
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "forest-hero-metric" },
+});
+/** @type {__VLS_StyleScopedClasses['forest-hero-metric']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+(__VLS_ctx.t('forest.xp', 'Experience'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
+(__VLS_ctx.rewards.overview?.totalExperience ?? 0);
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "forest-level-card" },
 });
@@ -137,9 +190,10 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 });
 /** @type {__VLS_StyleScopedClasses['forest-summary-grid']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-summary-card" },
+    ...{ class: "forest-summary-card accent" },
 });
 /** @type {__VLS_StyleScopedClasses['forest-summary-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['accent']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
     ...{ class: "forest-summary-label" },
 });
@@ -197,9 +251,10 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 });
 /** @type {__VLS_StyleScopedClasses['forest-main-grid']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel" },
+    ...{ class: "forest-panel forest-canopy-panel" },
 });
 /** @type {__VLS_StyleScopedClasses['forest-panel']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-canopy-panel']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "forest-panel-head" },
 });
@@ -216,9 +271,15 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 (__VLS_ctx.t('forest.count', '{count} trees', { count: __VLS_ctx.focus.forestSessions.length }));
 if (!__VLS_ctx.focus.forestSessions.length) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-empty" },
+        ...{ class: "forest-empty forest-empty-rich" },
     });
     /** @type {__VLS_StyleScopedClasses['forest-empty']} */ ;
+    /** @type {__VLS_StyleScopedClasses['forest-empty-rich']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-empty-icon" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-empty-icon']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
     (__VLS_ctx.t('forest.empty', 'Finish a focus session to plant your first tree.'));
 }
 else {
@@ -233,7 +294,7 @@ else {
                         return;
                     __VLS_ctx.selectedTree = __VLS_ctx.focus.forestSessions.find((session) => session.id === tree.sessionId) || null;
                     // @ts-ignore
-                    [t, t, t, t, t, t, t, t, t, t, t, rewards, rewards, rewards, rewards, levelProgressPct, levelProgressLabel, focus, focus, focus, focus, forestTrees, selectedTree,];
+                    [t, t, t, t, t, t, t, t, t, t, t, t, t, t, focus, focus, focus, focus, focus, rewards, rewards, rewards, rewards, rewards, rewards, levelProgressPct, levelProgressLabel, forestTrees, selectedTree,];
                 } },
             key: (tree.sessionId),
             ...{ class: "forest-tree" },
@@ -246,19 +307,26 @@ else {
         });
         /** @type {__VLS_StyleScopedClasses['forest-tree-icon']} */ ;
         (__VLS_ctx.treeEmoji(tree.focusMinutes));
+        __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+            ...{ class: "forest-tree-minutes" },
+        });
+        /** @type {__VLS_StyleScopedClasses['forest-tree-minutes']} */ ;
+        (tree.focusMinutes);
+        (__VLS_ctx.t('focus.minutes', 'min'));
         __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
             ...{ class: "forest-tree-date" },
         });
         /** @type {__VLS_StyleScopedClasses['forest-tree-date']} */ ;
         (__VLS_ctx.formatDate(tree.plantedAt));
         // @ts-ignore
-        [selectedTree, treeEmoji, formatDate,];
+        [t, selectedTree, treeEmoji, formatDate,];
     }
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel" },
+    ...{ class: "forest-panel forest-detail-panel" },
 });
 /** @type {__VLS_StyleScopedClasses['forest-panel']} */ ;
+/** @type {__VLS_StyleScopedClasses['forest-detail-panel']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "forest-panel-head" },
 });
@@ -275,76 +343,104 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 (__VLS_ctx.selectedTree ? __VLS_ctx.t('forest.detail.ready', 'Session record') : __VLS_ctx.t('forest.detail.empty', 'Select a tree'));
 if (__VLS_ctx.selectedTree) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-detail" },
+        ...{ class: "forest-detail-card" },
     });
-    /** @type {__VLS_StyleScopedClasses['forest-detail']} */ ;
+    /** @type {__VLS_StyleScopedClasses['forest-detail-card']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-detail-row" },
+        ...{ class: "forest-detail-top" },
     });
-    /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
+    /** @type {__VLS_StyleScopedClasses['forest-detail-top']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-detail-kicker" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-detail-kicker']} */ ;
+    (__VLS_ctx.t('forest.detail.ready', 'Session record'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-detail-title" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-detail-title']} */ ;
+    (__VLS_ctx.selectedTree.planName || __VLS_ctx.t('focus.link_none', 'No linked plan'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-detail-badge" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-detail-badge']} */ ;
+    (__VLS_ctx.selectedTree.pointsAwarded);
+    (__VLS_ctx.t('reward.points', 'Points'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-detail-meta" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-detail-meta']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-detail-meta-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-detail-meta-item']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
     (__VLS_ctx.t('forest.detail.time', 'Completed at'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
     (__VLS_ctx.formatDateTime(__VLS_ctx.selectedTree.endedAt || __VLS_ctx.selectedTree.startedAt));
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-detail-row" },
+        ...{ class: "forest-detail-meta-item" },
     });
-    /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
+    /** @type {__VLS_StyleScopedClasses['forest-detail-meta-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+    (__VLS_ctx.t('forest.xp', 'Experience'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
+    (__VLS_ctx.selectedTree.experienceAwarded);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-detail-grid" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-detail-grid']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-detail-stat" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
     (__VLS_ctx.t('forest.detail.duration', 'Focus duration'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
     (__VLS_ctx.selectedTree.focusMinutes);
     (__VLS_ctx.t('focus.minutes', 'min'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-detail-row" },
+        ...{ class: "forest-detail-stat" },
     });
-    /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
+    /** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
     (__VLS_ctx.t('forest.detail.break', 'Break duration'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
     (__VLS_ctx.selectedTree.breakMinutes);
     (__VLS_ctx.t('focus.minutes', 'min'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-detail-row" },
+        ...{ class: "forest-detail-stat" },
     });
-    /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
+    /** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
     (__VLS_ctx.t('forest.detail.cycle', 'Cycles'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
     (__VLS_ctx.selectedTree.cycleInterval);
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-detail-row" },
+        ...{ class: "forest-detail-stat wide" },
     });
-    /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
+    /** @type {__VLS_StyleScopedClasses['forest-detail-stat']} */ ;
+    /** @type {__VLS_StyleScopedClasses['wide']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
     (__VLS_ctx.t('forest.detail.plan', 'Linked plan'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
     (__VLS_ctx.selectedTree.planName || __VLS_ctx.t('focus.link_none', 'No linked plan'));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-detail-row" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-    (__VLS_ctx.t('reward.points', 'Points'));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
-    (__VLS_ctx.selectedTree.pointsAwarded);
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-detail-row" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-    (__VLS_ctx.t('forest.xp', 'Experience'));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
-    (__VLS_ctx.selectedTree.experienceAwarded);
 }
 else {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-empty" },
+        ...{ class: "forest-empty forest-empty-detail" },
     });
     /** @type {__VLS_StyleScopedClasses['forest-empty']} */ ;
+    /** @type {__VLS_StyleScopedClasses['forest-empty-detail']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "forest-empty-icon" },
+    });
+    /** @type {__VLS_StyleScopedClasses['forest-empty-icon']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
     (__VLS_ctx.t('forest.detail.prompt', 'Click any tree in the forest to see the linked focus session.'));
 }
 // @ts-ignore
-[t, t, t, t, t, t, t, t, t, t, t, t, t, t, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, formatDateTime,];
+[t, t, t, t, t, t, t, t, t, t, t, t, t, t, t, t, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, formatDateTime,];
 const __VLS_export = (await import('vue')).defineComponent({});
 export default {};

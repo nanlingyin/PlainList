@@ -1,7 +1,7 @@
 import type {
   AiReviewPeriod,
-  RewardBadgeId,
-  RewardBadgeProgress,
+  RewardAchievementId,
+  RewardAchievementProgress,
   RewardEvent,
   RewardInventoryItem,
   RewardOverview,
@@ -15,7 +15,7 @@ import {
   MAX_LEVEL,
   PERFECT_DAY_EXPERIENCE,
   PERFECT_DAY_POINTS,
-  REWARD_BADGE_DEFINITIONS,
+  REWARD_ACHIEVEMENT_DEFINITIONS,
   STORE_ITEM_DEFINITIONS,
   getMonthRange,
   getWeekStart,
@@ -62,10 +62,13 @@ type RewardModel = {
   todayKey: string;
   focusSessions: RewardFocusInput[];
   perfectDays: PerfectDayInfo[];
-  badges: RewardBadgeProgress[];
+  achievements: RewardAchievementProgress[];
   recentEvents: RewardEvent[];
   completedFocusSessionsToday: number;
   perfectDaysToday: number;
+  checkinDays: number;
+  currentCheckinStreak: number;
+  longestCheckinStreak: number;
   currentPerfectStreak: number;
   longestPerfectStreak: number;
   spentPoints: number;
@@ -153,18 +156,22 @@ export function calculateFocusReward(focusMinutes: number, cycleInterval: number
   };
 }
 
-function badgeProgressValue(id: RewardBadgeId, focusCount: number, perfectCount: number, longestStreak: number): number {
-  switch (id) {
-    case 'first-focus':
-    case 'focus-8':
-    case 'focus-25':
-      return focusCount;
-    case 'perfect-day-1':
-      return perfectCount;
-    case 'streak-3':
-    case 'streak-7':
-      return longestStreak;
+function achievementProgressValue(id: RewardAchievementId, values: {
+  checkinDays: number;
+  streakDays: number;
+  focusSessions: number;
+  level: number;
+}): number {
+  if (id.startsWith('checkin-')) {
+    return values.checkinDays;
   }
+  if (id.startsWith('streak-')) {
+    return values.streakDays;
+  }
+  if (id.startsWith('focus-')) {
+    return values.focusSessions;
+  }
+  return values.level;
 }
 
 function cumulativeXpForLevel(level: number): number {
@@ -216,9 +223,12 @@ export function buildRewardModel(
   }, new Map<string, boolean>());
 
   const perfectDays: PerfectDayInfo[] = [];
+  const completedCheckinDates = new Set<string>();
   const streakAchievements = new Map<number, string>();
-  let currentStreak = 0;
-  let longestStreak = 0;
+  let currentCheckinStreak = 0;
+  let longestCheckinStreak = 0;
+  let currentPerfectStreak = 0;
+  let longestPerfectStreak = 0;
 
   if (firstPlanDate) {
     const dateKeys = enumerateDateKeys(firstPlanDate, todayKey);
@@ -228,43 +238,67 @@ export function buildRewardModel(
         continue;
       }
 
-      const isPerfect = activePlans.every((plan) => checkMap.get(`${plan.id}:${dateKey}`) === true);
+      const completedPlans = activePlans.filter((plan) => checkMap.get(`${plan.id}:${dateKey}`) === true);
+      const hasCheckin = completedPlans.length > 0;
+      if (hasCheckin) {
+        completedCheckinDates.add(dateKey);
+        currentCheckinStreak += 1;
+        longestCheckinStreak = Math.max(longestCheckinStreak, currentCheckinStreak);
+        if ((currentCheckinStreak === 3 || currentCheckinStreak === 7 || currentCheckinStreak === 15 || currentCheckinStreak === 30 || currentCheckinStreak === 100) && !streakAchievements.has(currentCheckinStreak)) {
+          streakAchievements.set(currentCheckinStreak, atDayEnd(dateKey));
+        }
+      } else {
+        currentCheckinStreak = 0;
+      }
+
+      const isPerfect = completedPlans.length === activePlans.length;
       if (isPerfect) {
+        currentPerfectStreak += 1;
+        longestPerfectStreak = Math.max(longestPerfectStreak, currentPerfectStreak);
         perfectDays.push({
           date: dateKey,
           achievedAt: atDayEnd(dateKey),
           pointsAwarded: PERFECT_DAY_POINTS,
           experienceAwarded: PERFECT_DAY_EXPERIENCE,
         });
-        currentStreak += 1;
-        longestStreak = Math.max(longestStreak, currentStreak);
-        if ((currentStreak === 3 || currentStreak === 7) && !streakAchievements.has(currentStreak)) {
-          streakAchievements.set(currentStreak, atDayEnd(dateKey));
-        }
       } else {
-        currentStreak = 0;
+        currentPerfectStreak = 0;
       }
     }
   }
 
   const todayPerfect = perfectDays.some((item) => item.date === todayKey);
   const focusCount = sortedFocusSessions.length;
-  const perfectCount = perfectDays.length;
+  const { level } = getLevelProgress(
+    sortedFocusSessions.reduce((sum, session) => sum + session.experienceAwarded, 0)
+      + perfectDays.reduce((sum, item) => sum + item.experienceAwarded, 0),
+  );
+  const progressValues = {
+    checkinDays: completedCheckinDates.size,
+    streakDays: longestCheckinStreak,
+    focusSessions: focusCount,
+    level,
+  };
 
-  const badges = REWARD_BADGE_DEFINITIONS.map<RewardBadgeProgress>((definition) => {
-    const progress = badgeProgressValue(definition.id, focusCount, perfectCount, longestStreak);
+  const achievements = REWARD_ACHIEVEMENT_DEFINITIONS.map<RewardAchievementProgress>((definition) => {
+    const progress = achievementProgressValue(definition.id, progressValues);
     let achievedAt: string | null = null;
 
-    if (definition.id === 'perfect-day-1') {
-      achievedAt = perfectDays[definition.target - 1]?.achievedAt ?? null;
-    } else if (definition.id === 'streak-3' || definition.id === 'streak-7') {
-      achievedAt = streakAchievements.get(definition.target) ?? null;
-    } else {
+    if (definition.category === 'focus') {
       achievedAt = sortedFocusSessions[definition.target - 1]?.endedAt ?? null;
+    } else if (definition.category === 'checkin') {
+      achievedAt = [...completedCheckinDates].sort()[definition.target - 1]
+        ? atDayEnd([...completedCheckinDates].sort()[definition.target - 1] as string)
+        : null;
+    } else if (definition.category === 'streak') {
+      achievedAt = streakAchievements.get(definition.target) ?? null;
+    } else if (definition.category === 'level') {
+      achievedAt = progress >= definition.target ? (sortedFocusSessions.at(-1)?.endedAt ?? perfectDays.at(-1)?.achievedAt ?? null) : null;
     }
 
     return {
       id: definition.id,
+      category: definition.category,
       metric: definition.metric,
       target: definition.target,
       progress,
@@ -303,12 +337,15 @@ export function buildRewardModel(
     todayKey,
     focusSessions: sortedFocusSessions,
     perfectDays,
-    badges,
+    achievements,
     recentEvents,
     completedFocusSessionsToday,
     perfectDaysToday: todayPerfect ? 1 : 0,
-    currentPerfectStreak: currentStreak,
-    longestPerfectStreak: longestStreak,
+    checkinDays: completedCheckinDates.size,
+    currentCheckinStreak,
+    longestCheckinStreak,
+    currentPerfectStreak,
+    longestPerfectStreak,
     spentPoints,
     inventory,
   };
@@ -345,7 +382,8 @@ export function buildRewardOverview(model: RewardModel): RewardOverview {
     perfectDaysToday: model.perfectDaysToday,
     currentPerfectStreak: model.currentPerfectStreak,
     longestPerfectStreak: model.longestPerfectStreak,
-    badges: model.badges,
+    achievements: model.achievements,
+    badges: model.achievements,
     recentEvents: model.recentEvents,
     inventory: model.inventory,
     storeItems,
@@ -363,6 +401,7 @@ export function buildRewardPeriodSummary(model: RewardModel, period: AiReviewPer
     points: 0,
     completedFocusSessions: 0,
     perfectDays: 0,
+    earnedAchievements: 0,
     earnedBadges: 0,
   } satisfies RewardPeriodSummary;
 
@@ -377,12 +416,12 @@ export function buildRewardPeriodSummary(model: RewardModel, period: AiReviewPer
 
   const perfectDayItems = model.perfectDays.filter((item) => item.date >= window.from && item.date <= window.to);
 
-  const earnedBadges = model.badges.filter((badge) => {
-    if (!badge.earned || !badge.achievedAt) {
+  const earnedAchievements = model.achievements.filter((achievement) => {
+    if (!achievement.earned || !achievement.achievedAt) {
       return false;
     }
 
-    const dateKey = badge.achievedAt.slice(0, 10);
+    const dateKey = achievement.achievedAt.slice(0, 10);
     return dateKey >= window.from && dateKey <= window.to;
   }).length;
 
@@ -392,6 +431,7 @@ export function buildRewardPeriodSummary(model: RewardModel, period: AiReviewPer
       + perfectDayItems.reduce((sum, item) => sum + item.pointsAwarded, 0),
     completedFocusSessions: completedSessions.length,
     perfectDays: perfectDayItems.length,
-    earnedBadges,
+    earnedAchievements,
+    earnedBadges: earnedAchievements,
   };
 }

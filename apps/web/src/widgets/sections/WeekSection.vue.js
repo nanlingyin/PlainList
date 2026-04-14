@@ -310,19 +310,34 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['week-chart-switch-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['insight-delta']} */ ;
 /** @type {__VLS_StyleScopedClasses['charts-row']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-insight']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-reward-summary']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-section']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-header']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-range']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-days-row']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-day-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['week-chart-switch']} */ ;
 /** @type {__VLS_StyleScopedClasses['charts-row']} */ ;
 /** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['active']} */ ;
-/** @type {__VLS_StyleScopedClasses['week-insight']} */ ;
-/** @type {__VLS_StyleScopedClasses['week-reward-summary']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-title']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-days-row']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-day-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['wdc-date-num']} */ ;
+/** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['chart']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-chart-switch']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-chart-switch-btn']} */ ;
+/** @type {__VLS_StyleScopedClasses['insight-item']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-reward-item']} */ ;
 /** @type {__VLS_StyleScopedClasses['week-insight']} */ ;
 /** @type {__VLS_StyleScopedClasses['week-reward-summary']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
-    ...{ class: "section" },
+    ...{ class: "week-section" },
 });
-/** @type {__VLS_StyleScopedClasses['section']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-section']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "week-header" },
 });
@@ -598,14 +613,14 @@ if (__VLS_ctx.rewardSummary) {
         ...{ class: "week-reward-label" },
     });
     /** @type {__VLS_StyleScopedClasses['week-reward-label']} */ ;
-    (__VLS_ctx.t('reward.badges', 'Badges'));
+    (__VLS_ctx.t('reward.achievements', 'Achievements'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
         ...{ class: "week-reward-value" },
     });
     /** @type {__VLS_StyleScopedClasses['week-reward-value']} */ ;
-    (__VLS_ctx.rewardSummary.earnedBadges);
+    (__VLS_ctx.rewardSummary.earnedAchievements ?? __VLS_ctx.rewardSummary.earnedBadges);
 }
 // @ts-ignore
-[t, t, t, t, t, t, t, t, t, t, t, t, t, t, t, activeChart, activeChart, activeChart, avg, activeDays, activeDays, bestDay, maxPct, streak, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary,];
+[t, t, t, t, t, t, t, t, t, t, t, t, t, t, t, activeChart, activeChart, activeChart, avg, activeDays, activeDays, bestDay, maxPct, streak, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary,];
 const __VLS_export = (await import('vue')).defineComponent({});
 export default {};

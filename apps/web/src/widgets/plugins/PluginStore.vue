@@ -71,7 +71,7 @@
             >
               <div class="pv-swatch-colors">
                 <span
-                  v-for="colorKey in ['--bg', '--surface', '--dark', '--mid', '--muted']"
+                  v-for="colorKey in ['--bg', '--surface', '--accent', '--dark', '--muted']"
                   :key="colorKey"
                   :style="{ background: theme.vars[colorKey] }"
                 />
@@ -204,12 +204,13 @@ function cardStyle(vars: ThemeVars): CSSProperties {
   return {
     background: vars['--surface'],
     border: `1px solid ${vars['--faint']}`,
-    borderRadius: '6px',
-    padding: '16px',
+    borderRadius: '16px',
+    padding: '18px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
-    maxWidth: '280px',
+    gap: '12px',
+    maxWidth: '320px',
+    boxShadow: `0 18px 42px ${vars['--shadow-color'] || 'rgba(15, 23, 42, 0.12)'}`,
   };
 }
 

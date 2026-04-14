@@ -7,7 +7,7 @@
           <span>{{ t('reward.points', 'Points') }} {{ rewardSummary.points }}</span>
           <span>{{ t('reward.focus_sessions', 'Focus sessions') }} {{ rewardSummary.completedFocusSessions }}</span>
           <span>{{ t('reward.perfect_days', 'Perfect days') }} {{ rewardSummary.perfectDays }}</span>
-          <span>{{ t('reward.badges', 'Badges') }} {{ rewardSummary.earnedBadges }}</span>
+          <span>{{ t('reward.achievements', 'Achievements') }} {{ rewardSummary.earnedAchievements ?? rewardSummary.earnedBadges }}</span>
         </div>
       </div>
       <div class="year-nav">

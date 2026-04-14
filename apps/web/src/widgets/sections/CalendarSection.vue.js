@@ -224,8 +224,8 @@ if (__VLS_ctx.rewardSummary) {
     (__VLS_ctx.t('reward.perfect_days', 'Perfect days'));
     (__VLS_ctx.rewardSummary.perfectDays);
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-    (__VLS_ctx.t('reward.badges', 'Badges'));
-    (__VLS_ctx.rewardSummary.earnedBadges);
+    (__VLS_ctx.t('reward.achievements', 'Achievements'));
+    (__VLS_ctx.rewardSummary.earnedAchievements ?? __VLS_ctx.rewardSummary.earnedBadges);
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "year-nav" },
@@ -235,7 +235,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
     ...{ onClick: (...[$event]) => {
             __VLS_ctx.year--;
             // @ts-ignore
-            [year, year, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, t, t, t, t,];
+            [year, year, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, t, t, t, t,];
         } },
     ...{ class: "nav-btn" },
 });

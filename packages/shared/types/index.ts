@@ -2,8 +2,31 @@ export type PlanType = 'habit' | 'todo';
 export type PluginCategory = 'language' | 'theme' | 'feature';
 export type ThemeVars = Record<string, string>;
 export type FocusSessionStatus = 'active' | 'paused' | 'completed' | 'canceled';
-export type RewardBadgeId = 'first-focus' | 'focus-8' | 'focus-25' | 'perfect-day-1' | 'streak-3' | 'streak-7';
-export type RewardBadgeMetric = 'focusSessions' | 'perfectDays' | 'streak';
+export type RewardAchievementId =
+  | 'checkin-3'
+  | 'checkin-15'
+  | 'checkin-50'
+  | 'checkin-120'
+  | 'checkin-300'
+  | 'streak-3'
+  | 'streak-7'
+  | 'streak-15'
+  | 'streak-30'
+  | 'streak-100'
+  | 'focus-5'
+  | 'focus-25'
+  | 'focus-80'
+  | 'focus-180'
+  | 'focus-400'
+  | 'level-2'
+  | 'level-4'
+  | 'level-6'
+  | 'level-8'
+  | 'level-10';
+export type RewardAchievementCategory = 'checkin' | 'streak' | 'focus' | 'level';
+export type RewardAchievementMetric = 'checkinDays' | 'streakDays' | 'focusSessions' | 'level';
+export type RewardBadgeId = RewardAchievementId;
+export type RewardBadgeMetric = RewardAchievementMetric;
 export type RewardEventKind = 'focus-session' | 'perfect-day';
 export type StoreItemId = 'makeup-card';
 
@@ -136,14 +159,17 @@ export interface PluginManifest {
   runtime: 'manifest';
 }
 
-export interface RewardBadgeProgress {
-  id: RewardBadgeId;
-  metric: RewardBadgeMetric;
+export interface RewardAchievementProgress {
+  id: RewardAchievementId;
+  category: RewardAchievementCategory;
+  metric: RewardAchievementMetric;
   target: number;
   progress: number;
   earned: boolean;
   achievedAt: string | null;
 }
+
+export interface RewardBadgeProgress extends RewardAchievementProgress {}
 
 export interface RewardEvent {
   id: string;
@@ -165,6 +191,7 @@ export interface RewardPeriodSummary {
   points: number;
   completedFocusSessions: number;
   perfectDays: number;
+  earnedAchievements: number;
   earnedBadges: number;
 }
 
@@ -183,6 +210,7 @@ export interface RewardOverview {
   perfectDaysToday: number;
   currentPerfectStreak: number;
   longestPerfectStreak: number;
+  achievements: RewardAchievementProgress[];
   badges: RewardBadgeProgress[];
   recentEvents: RewardEvent[];
   inventory: RewardInventoryItem[];

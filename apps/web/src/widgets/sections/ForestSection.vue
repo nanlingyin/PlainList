@@ -1,11 +1,27 @@
 <template>
   <section class="forest-section">
-    <div class="forest-header">
-      <div>
+    <div class="forest-hero">
+      <div class="forest-hero-copy">
         <div class="forest-kicker">{{ t('forest.kicker', 'Focus Forest') }}</div>
         <h2 class="forest-title">{{ t('forest.title', 'Focus Forest') }}</h2>
         <p class="forest-subtitle">{{ t('forest.subtitle', 'Each completed focus session grows one tree. Click a tree to inspect that session.') }}</p>
+
+        <div class="forest-hero-metrics">
+          <div class="forest-hero-metric">
+            <span>{{ t('reward.focus_sessions', 'Focus sessions') }}</span>
+            <strong>{{ focus.forestSessions.length }}</strong>
+          </div>
+          <div class="forest-hero-metric">
+            <span>{{ t('forest.balance', 'Points balance') }}</span>
+            <strong>{{ rewards.overview?.spendablePoints ?? 0 }}</strong>
+          </div>
+          <div class="forest-hero-metric">
+            <span>{{ t('forest.xp', 'Experience') }}</span>
+            <strong>{{ rewards.overview?.totalExperience ?? 0 }}</strong>
+          </div>
+        </div>
       </div>
+
       <div class="forest-level-card">
         <div class="forest-level-label">{{ t('forest.level', 'Level') }}</div>
         <div class="forest-level-value">Lv. {{ rewards.overview?.level ?? 1 }}</div>
@@ -17,7 +33,7 @@
     </div>
 
     <div class="forest-summary-grid">
-      <div class="forest-summary-card">
+      <div class="forest-summary-card accent">
         <span class="forest-summary-label">{{ t('reward.total_points', 'Total points') }}</span>
         <strong class="forest-summary-value">{{ rewards.overview?.totalPoints ?? 0 }}</strong>
       </div>
@@ -36,14 +52,15 @@
     </div>
 
     <div class="forest-main-grid">
-      <div class="forest-panel">
+      <div class="forest-panel forest-canopy-panel">
         <div class="forest-panel-head">
           <div class="forest-panel-title">{{ t('forest.panel.forest', 'Forest') }}</div>
           <div class="forest-panel-sub">{{ t('forest.count', '{count} trees', { count: focus.forestSessions.length }) }}</div>
         </div>
 
-        <div v-if="!focus.forestSessions.length" class="forest-empty">
-          {{ t('forest.empty', 'Finish a focus session to plant your first tree.') }}
+        <div v-if="!focus.forestSessions.length" class="forest-empty forest-empty-rich">
+          <div class="forest-empty-icon">🌱</div>
+          <div>{{ t('forest.empty', 'Finish a focus session to plant your first tree.') }}</div>
         </div>
         <div v-else class="forest-grid">
           <button
@@ -54,49 +71,60 @@
             @click="selectedTree = focus.forestSessions.find((session) => session.id === tree.sessionId) || null"
           >
             <span class="forest-tree-icon">{{ treeEmoji(tree.focusMinutes) }}</span>
+            <strong class="forest-tree-minutes">{{ tree.focusMinutes }} {{ t('focus.minutes', 'min') }}</strong>
             <span class="forest-tree-date">{{ formatDate(tree.plantedAt) }}</span>
           </button>
         </div>
       </div>
 
-      <div class="forest-panel">
+      <div class="forest-panel forest-detail-panel">
         <div class="forest-panel-head">
           <div class="forest-panel-title">{{ t('forest.panel.detail', 'Tree detail') }}</div>
           <div class="forest-panel-sub">{{ selectedTree ? t('forest.detail.ready', 'Session record') : t('forest.detail.empty', 'Select a tree') }}</div>
         </div>
 
-        <div v-if="selectedTree" class="forest-detail">
-          <div class="forest-detail-row">
-            <span>{{ t('forest.detail.time', 'Completed at') }}</span>
-            <strong>{{ formatDateTime(selectedTree.endedAt || selectedTree.startedAt) }}</strong>
+        <div v-if="selectedTree" class="forest-detail-card">
+          <div class="forest-detail-top">
+            <div>
+              <div class="forest-detail-kicker">{{ t('forest.detail.ready', 'Session record') }}</div>
+              <div class="forest-detail-title">{{ selectedTree.planName || t('focus.link_none', 'No linked plan') }}</div>
+            </div>
+            <div class="forest-detail-badge">+{{ selectedTree.pointsAwarded }} {{ t('reward.points', 'Points') }}</div>
           </div>
-          <div class="forest-detail-row">
-            <span>{{ t('forest.detail.duration', 'Focus duration') }}</span>
-            <strong>{{ selectedTree.focusMinutes }} {{ t('focus.minutes', 'min') }}</strong>
+
+          <div class="forest-detail-meta">
+            <div class="forest-detail-meta-item">
+              <span>{{ t('forest.detail.time', 'Completed at') }}</span>
+              <strong>{{ formatDateTime(selectedTree.endedAt || selectedTree.startedAt) }}</strong>
+            </div>
+            <div class="forest-detail-meta-item">
+              <span>{{ t('forest.xp', 'Experience') }}</span>
+              <strong>+{{ selectedTree.experienceAwarded }}</strong>
+            </div>
           </div>
-          <div class="forest-detail-row">
-            <span>{{ t('forest.detail.break', 'Break duration') }}</span>
-            <strong>{{ selectedTree.breakMinutes }} {{ t('focus.minutes', 'min') }}</strong>
-          </div>
-          <div class="forest-detail-row">
-            <span>{{ t('forest.detail.cycle', 'Cycles') }}</span>
-            <strong>{{ selectedTree.cycleInterval }}</strong>
-          </div>
-          <div class="forest-detail-row">
-            <span>{{ t('forest.detail.plan', 'Linked plan') }}</span>
-            <strong>{{ selectedTree.planName || t('focus.link_none', 'No linked plan') }}</strong>
-          </div>
-          <div class="forest-detail-row">
-            <span>{{ t('reward.points', 'Points') }}</span>
-            <strong>+{{ selectedTree.pointsAwarded }}</strong>
-          </div>
-          <div class="forest-detail-row">
-            <span>{{ t('forest.xp', 'Experience') }}</span>
-            <strong>+{{ selectedTree.experienceAwarded }}</strong>
+
+          <div class="forest-detail-grid">
+            <div class="forest-detail-stat">
+              <span>{{ t('forest.detail.duration', 'Focus duration') }}</span>
+              <strong>{{ selectedTree.focusMinutes }} {{ t('focus.minutes', 'min') }}</strong>
+            </div>
+            <div class="forest-detail-stat">
+              <span>{{ t('forest.detail.break', 'Break duration') }}</span>
+              <strong>{{ selectedTree.breakMinutes }} {{ t('focus.minutes', 'min') }}</strong>
+            </div>
+            <div class="forest-detail-stat">
+              <span>{{ t('forest.detail.cycle', 'Cycles') }}</span>
+              <strong>{{ selectedTree.cycleInterval }}</strong>
+            </div>
+            <div class="forest-detail-stat wide">
+              <span>{{ t('forest.detail.plan', 'Linked plan') }}</span>
+              <strong>{{ selectedTree.planName || t('focus.link_none', 'No linked plan') }}</strong>
+            </div>
           </div>
         </div>
-        <div v-else class="forest-empty">
-          {{ t('forest.detail.prompt', 'Click any tree in the forest to see the linked focus session.') }}
+        <div v-else class="forest-empty forest-empty-detail">
+          <div class="forest-empty-icon">🌲</div>
+          <div>{{ t('forest.detail.prompt', 'Click any tree in the forest to see the linked focus session.') }}</div>
         </div>
       </div>
     </div>
@@ -188,11 +216,28 @@ onMounted(async () => {
   gap: 24px;
 }
 
-.forest-header {
+.forest-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1.4fr) 280px;
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
+}
+
+.forest-hero-copy,
+.forest-level-card,
+.forest-panel,
+.forest-summary-card {
+  border: 1px solid var(--faint);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--shadow-color) 68%, transparent);
+}
+
+.forest-hero-copy {
+  padding: 28px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 92%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, var(--bg)), color-mix(in srgb, var(--surface) 90%, var(--bg)));
 }
 
 .forest-kicker {
@@ -203,67 +248,91 @@ onMounted(async () => {
 }
 
 .forest-title {
-  margin-top: 6px;
-  font-size: clamp(34px, 5vw, 48px);
+  margin-top: 8px;
+  font-size: clamp(34px, 5vw, 50px);
   line-height: 1;
   letter-spacing: -.05em;
+  color: var(--dark);
 }
 
 .forest-subtitle {
-  margin-top: 12px;
-  max-width: 58ch;
+  margin-top: 14px;
+  max-width: 60ch;
   color: var(--mid);
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
-.forest-level-card,
-.forest-panel,
-.forest-summary-card {
-  border: 1px solid var(--faint);
+.forest-hero-metrics {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.forest-hero-metric,
+.forest-detail-stat,
+.forest-detail-meta-item {
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--faint));
   border-radius: 16px;
-  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
-  box-shadow: 0 14px 34px rgba(17,17,17,.03);
+  background: color-mix(in srgb, var(--surface) 88%, var(--accent-soft));
 }
 
-.forest-level-card {
-  padding: 18px;
+.forest-hero-metric {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.forest-level-label,
+.forest-hero-metric span,
 .forest-summary-label,
-.forest-panel-sub {
+.forest-level-label,
+.forest-panel-sub,
+.forest-detail-kicker,
+.forest-detail-stat span,
+.forest-detail-meta-item span {
   font-size: 10px;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
-.forest-level-value,
-.forest-summary-value {
-  margin-top: 10px;
+.forest-hero-metric strong,
+.forest-summary-value,
+.forest-level-value {
   font-family: var(--mono);
-  font-size: 32px;
+  font-size: 30px;
   line-height: 1;
   color: var(--dark);
 }
 
+.forest-level-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 84%, var(--surface)), color-mix(in srgb, var(--surface) 92%, var(--bg)));
+}
+
 .forest-level-bar {
-  margin-top: 16px;
-  height: 8px;
+  margin-top: 18px;
+  height: 10px;
   border-radius: 999px;
-  background: var(--faint2);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   overflow: hidden;
 }
 
 .forest-level-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--dark), var(--mid));
+  background: linear-gradient(90deg, var(--accent), var(--success));
 }
 
 .forest-level-sub {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 12px;
   color: var(--mid);
+  line-height: 1.6;
 }
 
 .forest-summary-grid {
@@ -276,14 +345,26 @@ onMounted(async () => {
   padding: 18px;
 }
 
+.forest-summary-card.accent {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 92%, var(--surface)), color-mix(in srgb, var(--surface) 88%, var(--bg)));
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--surface));
+}
+
 .forest-main-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, .9fr);
   gap: 18px;
 }
 
 .forest-panel {
-  padding: 18px;
+  padding: 20px;
+}
+
+.forest-canopy-panel {
+  background:
+    radial-gradient(circle at top center, color-mix(in srgb, var(--accent-soft) 74%, transparent), transparent 36%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, var(--bg)), color-mix(in srgb, var(--surface) 90%, var(--bg)));
 }
 
 .forest-panel-head {
@@ -291,7 +372,7 @@ onMounted(async () => {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .forest-panel-title {
@@ -301,40 +382,73 @@ onMounted(async () => {
 }
 
 .forest-empty {
-  color: var(--muted);
+  color: var(--mid);
   line-height: 1.7;
+}
+
+.forest-empty-rich,
+.forest-empty-detail {
+  min-height: 260px;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 20%, var(--faint));
+  background: color-mix(in srgb, var(--surface) 82%, var(--accent-soft));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+}
+
+.forest-empty-icon {
+  font-size: 40px;
+  line-height: 1;
 }
 
 .forest-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 14px;
 }
 
 .forest-tree {
-  min-height: 92px;
-  border: 1px solid var(--faint);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  min-height: 128px;
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--faint));
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, var(--accent-soft)), color-mix(in srgb, var(--surface) 92%, var(--bg)));
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: transform .15s, border-color .15s, box-shadow .15s;
+  transition: transform .15s, border-color .15s, box-shadow .15s, background .15s;
+  padding: 12px;
 }
 
 .forest-tree:hover,
 .forest-tree.active {
-  border-color: color-mix(in srgb, var(--dark) 18%, var(--surface));
-  transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(17,17,17,.06);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--surface));
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px color-mix(in srgb, var(--shadow-color) 72%, transparent);
+}
+
+.forest-tree.active {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 94%, var(--surface)), color-mix(in srgb, var(--surface) 82%, var(--bg)));
 }
 
 .forest-tree-icon {
-  font-size: 28px;
+  font-size: 34px;
   line-height: 1;
+}
+
+.forest-tree-minutes {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--dark);
 }
 
 .forest-tree-date {
@@ -344,49 +458,117 @@ onMounted(async () => {
   text-transform: uppercase;
 }
 
-.forest-detail {
+.forest-detail-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, var(--bg)), color-mix(in srgb, var(--surface) 88%, var(--bg)));
+}
+
+.forest-detail-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.forest-detail-row {
-  display: flex;
-  justify-content: space-between;
   gap: 16px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--faint2);
-  font-size: 13px;
-  color: var(--mid);
 }
 
-.forest-detail-row strong {
+.forest-detail-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.forest-detail-title {
+  margin-top: 8px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.03em;
   color: var(--dark);
-  text-align: right;
+}
+
+.forest-detail-badge {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-soft) 90%, var(--surface));
+  color: var(--accent-strong);
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.forest-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.forest-detail-meta-item,
+.forest-detail-stat {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.forest-detail-meta-item strong,
+.forest-detail-stat strong {
+  color: var(--dark);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.forest-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.forest-detail-stat strong {
+  font-family: var(--mono);
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.forest-detail-stat.wide {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 1024px) {
-  .forest-header,
+  .forest-hero,
   .forest-main-grid {
     grid-template-columns: 1fr;
   }
 
-  .forest-summary-grid {
+  .forest-summary-grid,
+  .forest-hero-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
-  .forest-summary-grid {
+  .forest-hero-copy,
+  .forest-level-card,
+  .forest-panel,
+  .forest-summary-card {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .forest-summary-grid,
+  .forest-hero-metrics,
+  .forest-detail-meta,
+  .forest-detail-grid {
     grid-template-columns: 1fr;
   }
 
   .forest-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .forest-detail-row {
-    align-items: flex-start;
+  .forest-detail-top {
     flex-direction: column;
   }
 }

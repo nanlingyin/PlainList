@@ -21,10 +21,20 @@
                 <div class="focus-phase">{{ focusPhaseLabel }}</div>
                 <div class="focus-phase-sub">{{ focusPhaseSub }}</div>
               </div>
-              <div class="focus-today-points">
-                <strong>{{ rewards.overview?.todayPoints ?? 0 }}</strong>
-                <span>{{ t('reward.points_today', 'today points') }}</span>
-                <em class="focus-level-chip">{{ levelLabel }}</em>
+              <div class="focus-head-side">
+                <button
+                  class="focus-help-trigger"
+                  type="button"
+                  :aria-label="t('reward.help_trigger', 'Reward rules')"
+                  @click="openRewardHelp"
+                >
+                  ?
+                </button>
+                <div class="focus-today-points">
+                  <strong>{{ rewards.overview?.todayPoints ?? 0 }}</strong>
+                  <span>{{ t('reward.points_today', 'today points') }}</span>
+                  <em class="focus-level-chip">{{ levelLabel }}</em>
+                </div>
               </div>
             </div>
 
@@ -118,14 +128,52 @@
 
           <div class="focus-foot">
             <div class="focus-next-badge">
-              <div class="focus-foot-label">{{ t('reward.next_badge', 'Next badge') }}</div>
-              <div class="focus-foot-value">{{ nextBadgeLabel }}</div>
-              <div class="focus-foot-sub">{{ nextBadgeProgressLabel }}</div>
+              <div class="focus-foot-label">{{ t('reward.next_achievement', 'Next achievement') }}</div>
+              <div class="focus-foot-value">{{ nextAchievementLabel }}</div>
+              <div v-if="nextAchievement" class="focus-foot-category">{{ nextAchievementCategory }}</div>
+              <div class="focus-foot-sub">{{ nextAchievementProgressLabel }}</div>
+              <div v-if="nextAchievementCondition" class="focus-foot-sub">{{ nextAchievementCondition }}</div>
             </div>
             <div class="focus-last-event">
               <div class="focus-foot-label">{{ t('reward.recent', 'Recent reward') }}</div>
               <div class="focus-foot-value">{{ recentEventLabel }}</div>
               <div class="focus-foot-sub">{{ recentEventSub }}</div>
+            </div>
+          </div>
+
+          <div class="focus-achievement-panel">
+            <div class="focus-achievement-panel-head">
+              <div>
+                <div class="focus-foot-label">{{ t('reward.earned_achievements', 'Earned achievements') }}</div>
+                <div class="focus-achievement-panel-count">{{ earnedAchievements.length }}</div>
+              </div>
+              <button
+                v-if="earnedAchievements.length > 4"
+                class="focus-achievement-toggle"
+                type="button"
+                @click="achievementsExpanded = !achievementsExpanded"
+              >
+                {{ achievementsExpanded
+                  ? t('reward.achievement.show_less', 'Show less')
+                  : t('reward.achievement.show_all', 'Show all') }}
+              </button>
+            </div>
+
+            <div v-if="visibleEarnedAchievements.length" class="focus-achievement-list">
+              <article
+                v-for="achievement in visibleEarnedAchievements"
+                :key="achievement.id"
+                class="focus-achievement-item"
+              >
+                <div class="focus-achievement-name">{{ achievementName(achievement) }}</div>
+                <div class="focus-achievement-meta">
+                  {{ achievementCategoryLabel(achievement) }}
+                  <span v-if="achievement.achievedAt">· {{ formatAchievementDate(achievement.achievedAt) }}</span>
+                </div>
+              </article>
+            </div>
+            <div v-else class="focus-achievement-empty">
+              {{ t('reward.achievement.none_earned', 'No achievements earned yet.') }}
             </div>
           </div>
         </div>
@@ -166,14 +214,81 @@
       </div>
     </div>
   </section>
+  <Teleport to="body">
+    <Transition name="day-popover-fade">
+      <div
+        v-if="helpOpen"
+        class="day-popover-overlay"
+        @click="closeRewardHelp"
+      >
+        <div
+          class="day-popover focus-help-popover"
+          :style="helpPopoverStyle"
+          @click.stop
+        >
+          <div class="day-popover-head">
+            <div>
+              <div class="day-popover-date">{{ t('reward.help.title', 'Reward rules') }}</div>
+            </div>
+            <button class="focus-help-close" type="button" @click="closeRewardHelp" aria-label="Close">×</button>
+          </div>
+          <div class="focus-help-body">
+            <div class="focus-help-section">
+              <div class="focus-help-title">{{ t('reward.help.points_title', 'How points are earned') }}</div>
+              <div class="focus-help-copy">{{ t('reward.help.points_body', 'Each completed focus session grants points, and perfect days add a fixed point bonus.') }}</div>
+            </div>
+            <div class="focus-help-section">
+              <div class="focus-help-title">{{ t('reward.help.experience_title', 'How experience is earned') }}</div>
+              <div class="focus-help-copy">{{ t('reward.help.experience_body', 'Each completed focus session grants experience, and perfect days add a fixed experience bonus.') }}</div>
+            </div>
+            <div class="focus-help-section">
+              <div class="focus-help-title">{{ t('reward.help.formula_title', 'Focus reward examples') }}</div>
+              <div class="focus-help-copy">{{ baseRewardHelp }}</div>
+              <div class="focus-help-copy">{{ currentRewardHelp }}</div>
+              <div class="focus-help-copy">{{ perfectDayBonusHelp }}</div>
+              <div class="focus-help-copy">{{ t('reward.help.formula_hint', 'Longer focus durations and higher cycle counts increase rewards.') }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <Teleport to="body">
+    <Transition name="day-popover-fade">
+      <div
+        v-if="helpDialogOpen"
+        class="tracker-makeup-overlay"
+        @click="closeRewardHelp"
+      >
+        <div class="tracker-makeup-dialog focus-help-dialog" @click.stop>
+          <div class="tracker-makeup-head">
+            <div>
+              <div class="tracker-makeup-title">{{ t('reward.help.title', 'Reward rules') }}</div>
+            </div>
+            <button class="focus-help-close" type="button" @click="closeRewardHelp" aria-label="Close">×</button>
+          </div>
+          <div class="tracker-makeup-copy focus-help-body">
+            <p><strong>{{ t('reward.help.points_title', 'How points are earned') }}</strong><br>{{ t('reward.help.points_body', 'Each completed focus session grants points, and perfect days add a fixed point bonus.') }}</p>
+            <p><strong>{{ t('reward.help.experience_title', 'How experience is earned') }}</strong><br>{{ t('reward.help.experience_body', 'Each completed focus session grants experience, and perfect days add a fixed experience bonus.') }}</p>
+            <p><strong>{{ t('reward.help.formula_title', 'Focus reward examples') }}</strong><br>{{ baseRewardHelp }}<br>{{ currentRewardHelp }}<br>{{ perfectDayBonusHelp }}<br>{{ t('reward.help.formula_hint', 'Longer focus durations and higher cycle counts increase rewards.') }}</p>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import type { FocusTimerSettings, RewardBadgeProgress, RewardEvent } from '@plainlist/shared'
+import type { FocusTimerSettings, RewardAchievementProgress, RewardEvent } from '@plainlist/shared'
 import {
   DEFAULT_BREAK_MINUTES,
   DEFAULT_CYCLES,
   DEFAULT_FOCUS_MINUTES,
+  FOCUS_SESSION_EXPERIENCE,
+  FOCUS_SESSION_POINTS,
+  PERFECT_DAY_EXPERIENCE,
+  PERFECT_DAY_POINTS,
 } from '@plainlist/shared'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useFocusStore } from '@/features/focus/model/useFocusStore'
@@ -203,6 +318,10 @@ const now = ref(new Date())
 const selectedPlan = ref('')
 const settingsOpen = ref(false)
 const pendingSettings = ref<FocusTimerSettings>({ ...focus.settings })
+const helpOpen = ref(false)
+const helpDialogOpen = ref(false)
+const helpPopoverStyle = ref<Record<string, string>>({})
+const achievementsExpanded = ref(false)
 let timer: number | null = null
 
 const hm = computed(() => pad(now.value.getHours()) + ':' + pad(now.value.getMinutes()))
@@ -315,31 +434,53 @@ const focusMetaLabel = computed(() => {
   })
 })
 
-function badgeName(badge: RewardBadgeProgress) {
-  const map: Record<string, string> = {
-    'first-focus': t('reward.badge.first_focus', 'First focus session'),
-    'focus-8': t('reward.badge.focus_8', '8 focus sessions'),
-    'focus-25': t('reward.badge.focus_25', '25 focus sessions'),
-    'perfect-day-1': t('reward.badge.perfect_day', 'First perfect day'),
-    'streak-3': t('reward.badge.streak_3', '3-day perfect streak'),
-    'streak-7': t('reward.badge.streak_7', '7-day perfect streak'),
-  }
-
-  return map[badge.id] || badge.id
+function achievementName(achievement: RewardAchievementProgress) {
+  return t(`reward.achievement.${achievement.id.replace('-', '_')}`, achievement.id)
 }
 
-const nextBadge = computed(() => rewards.overview?.badges.find((badge) => !badge.earned) ?? null)
-const nextBadgeLabel = computed(() => nextBadge.value ? badgeName(nextBadge.value) : t('reward.all_badges', 'All current badges earned'))
-const nextBadgeProgressLabel = computed(() => {
-  if (!nextBadge.value) {
-    return t('reward.all_badges_sub', 'You have cleared the current reward set.')
+function achievementCategoryLabel(achievement: RewardAchievementProgress) {
+  return t(`reward.achievement.category.${achievement.category}`, achievement.category)
+}
+
+function achievementConditionLabel(achievement: RewardAchievementProgress) {
+  return t(`reward.achievement.condition.${achievement.metric.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`)}`, '{progress}/{target}', {
+    target: achievement.target,
+  })
+}
+
+const nextAchievement = computed(() => rewards.overview?.achievements.find((achievement) => !achievement.earned) ?? null)
+const nextAchievementLabel = computed(() => nextAchievement.value
+  ? achievementName(nextAchievement.value)
+  : t('reward.all_achievements', 'All current achievements earned'))
+const nextAchievementProgressLabel = computed(() => {
+  if (!nextAchievement.value) {
+    return t('reward.all_achievements_sub', 'You have cleared the current achievement set.')
   }
 
-  return t('reward.badge_progress', '{progress}/{target}', {
-    progress: Math.min(nextBadge.value.progress, nextBadge.value.target),
-    target: nextBadge.value.target,
+  return t('reward.achievement_progress', '{progress}/{target}', {
+    progress: Math.min(nextAchievement.value.progress, nextAchievement.value.target),
+    target: nextAchievement.value.target,
   })
 })
+const nextAchievementCondition = computed(() => {
+  if (!nextAchievement.value) {
+    return ''
+  }
+
+  return achievementConditionLabel(nextAchievement.value)
+})
+const nextAchievementCategory = computed(() => nextAchievement.value ? achievementCategoryLabel(nextAchievement.value) : '')
+const earnedAchievements = computed(() => (rewards.overview?.achievements ?? []).filter((achievement) => achievement.earned))
+const visibleEarnedAchievements = computed(() => achievementsExpanded.value ? earnedAchievements.value : earnedAchievements.value.slice(0, 4))
+
+function formatAchievementDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 10)
+  }
+
+  return date.toLocaleDateString(i18n.locale === 'zh-CN' ? 'zh-CN' : 'en-US')
+}
 
 function describeEvent(event: RewardEvent | null) {
   if (!event) {
@@ -373,6 +514,57 @@ function describeEvent(event: RewardEvent | null) {
 const recentEvent = computed(() => rewards.overview?.recentEvents[0] ?? null)
 const recentEventLabel = computed(() => describeEvent(recentEvent.value).label)
 const recentEventSub = computed(() => describeEvent(recentEvent.value).sub)
+const baseRewardHelp = computed(() => t('reward.help.formula_base', 'Base reward: {focus} min focus / cycle {cycles} = +{points} points / +{experience} XP', {
+  focus: DEFAULT_FOCUS_MINUTES,
+  cycles: DEFAULT_CYCLES,
+  points: FOCUS_SESSION_POINTS,
+  experience: FOCUS_SESSION_EXPERIENCE,
+}))
+const currentRewardHelp = computed(() => t('reward.help.formula_current', 'Current setting: {focus} min focus / cycle {cycles} = +{points} points / +{experience} XP', {
+  focus: focus.settings.focusMinutes ?? DEFAULT_FOCUS_MINUTES,
+  cycles: focus.settings.cycles ?? DEFAULT_CYCLES,
+  points: rewards.overview?.completedFocusSessions !== undefined
+    ? Math.max(6, Math.round(FOCUS_SESSION_POINTS * Math.min(2.2, Math.max(0.6, (focus.settings.focusMinutes ?? DEFAULT_FOCUS_MINUTES) / DEFAULT_FOCUS_MINUTES)) * Math.min(1.3, 1 + Math.max((focus.settings.cycles ?? DEFAULT_CYCLES) - 4, 0) * 0.06)))
+    : FOCUS_SESSION_POINTS,
+  experience: rewards.overview?.completedFocusSessions !== undefined
+    ? Math.max(8, Math.round(FOCUS_SESSION_EXPERIENCE * Math.min(2.2, Math.max(0.6, (focus.settings.focusMinutes ?? DEFAULT_FOCUS_MINUTES) / DEFAULT_FOCUS_MINUTES)) * Math.min(1.3, 1 + Math.max((focus.settings.cycles ?? DEFAULT_CYCLES) - 4, 0) * 0.06)))
+    : FOCUS_SESSION_EXPERIENCE,
+}))
+const perfectDayBonusHelp = computed(() => t('reward.help.formula_bonus', 'Perfect day bonus: +{points} points / +{experience} XP', {
+  points: PERFECT_DAY_POINTS,
+  experience: PERFECT_DAY_EXPERIENCE,
+}))
+
+function buildPopoverStyle(event: Event) {
+  const target = event.currentTarget as HTMLElement | null
+  if (!target) return {}
+  const rect = target.getBoundingClientRect()
+  const width = Math.min(360, window.innerWidth - 24)
+  const left = Math.min(Math.max(12, rect.left + rect.width / 2 - width / 2), window.innerWidth - width - 12)
+  const top = Math.min(rect.bottom + 14, window.innerHeight - 260)
+  return {
+    left: `${left}px`,
+    top: `${Math.max(16, top)}px`,
+    width: `${width}px`,
+  }
+}
+
+function openRewardHelp(event: Event) {
+  if (window.innerWidth <= 768) {
+    helpDialogOpen.value = true
+    helpOpen.value = false
+    return
+  }
+
+  helpPopoverStyle.value = buildPopoverStyle(event)
+  helpOpen.value = true
+  helpDialogOpen.value = false
+}
+
+function closeRewardHelp() {
+  helpOpen.value = false
+  helpDialogOpen.value = false
+}
 
 async function onPrimaryAction() {
   if (focus.mode === 'break') {
@@ -425,3 +617,194 @@ onUnmounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.focus-head-side {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.focus-help-trigger {
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--bg) 18%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 8%, transparent);
+  color: var(--bg);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.focus-help-trigger:hover {
+  background: color-mix(in srgb, var(--bg) 16%, transparent);
+}
+
+.focus-help-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid color-mix(in srgb, var(--faint) 88%, var(--surface));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 90%, var(--bg));
+  color: var(--mid);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+}
+
+.focus-help-close:hover {
+  background: var(--dark);
+  border-color: var(--dark);
+  color: var(--bg);
+  transform: translateY(-1px);
+}
+
+.focus-foot-category {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--bg) 48%, transparent);
+}
+
+.focus-achievement-panel {
+  margin-top: 1px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--dark) 82%, var(--bg) 16%);
+  border-top: 1px solid color-mix(in srgb, var(--bg) 8%, transparent);
+}
+
+.focus-achievement-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.focus-achievement-panel-count {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--bg);
+}
+
+.focus-achievement-toggle {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--bg) 18%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 8%, transparent);
+  color: var(--bg);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.focus-achievement-list {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.focus-achievement-item {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--bg) 12%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 7%, transparent);
+}
+
+.focus-achievement-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bg);
+}
+
+.focus-achievement-meta,
+.focus-achievement-empty {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--bg) 58%, transparent);
+}
+
+.focus-help-popover,
+.focus-help-dialog {
+  border: 1px solid var(--faint);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  box-shadow: 0 20px 54px rgba(17, 17, 17, .14);
+}
+
+.focus-help-popover {
+  position: fixed;
+  max-height: min(360px, calc(100vh - 32px));
+  padding: 16px;
+  overflow: auto;
+}
+
+.focus-help-dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: min(420px, calc(100vw - 24px));
+  transform: translate(-50%, -50%);
+  padding: 18px;
+}
+
+.focus-help-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.focus-help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.focus-help-title {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.focus-help-copy {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--mid);
+}
+
+.day-popover-fade-enter-active,
+.day-popover-fade-leave-active {
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.day-popover-fade-enter-from,
+.day-popover-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+@media (max-width: 768px) {
+  .focus-head-side {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .focus-achievement-list {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

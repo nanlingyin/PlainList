@@ -21,8 +21,8 @@
         <strong class="tracker-reward-value">{{ rewardSummary.perfectDays }}</strong>
       </div>
       <div class="tracker-reward-item">
-        <span class="tracker-reward-label">{{ t('reward.badges', 'Badges') }}</span>
-        <strong class="tracker-reward-value">{{ rewardSummary.earnedBadges }}</strong>
+        <span class="tracker-reward-label">{{ t('reward.achievements', 'Achievements') }}</span>
+        <strong class="tracker-reward-value">{{ rewardSummary.earnedAchievements ?? rewardSummary.earnedBadges }}</strong>
       </div>
     </div>
 

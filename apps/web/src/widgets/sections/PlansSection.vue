@@ -120,9 +120,10 @@
               </div>
             </div>
             <div class="day-reward-foot">
-              <span class="day-reward-foot-label">{{ t('reward.next_badge', 'Next badge') }}</span>
-              <span class="day-reward-foot-value">{{ dayNextBadgeLabel }}</span>
-              <span class="day-reward-foot-sub">{{ dayNextBadgeProgress }}</span>
+              <span class="day-reward-foot-label">{{ t('reward.next_achievement', 'Next achievement') }}</span>
+              <span class="day-reward-foot-value">{{ dayNextAchievementLabel }}</span>
+              <span class="day-reward-foot-sub">{{ dayNextAchievementProgress }}</span>
+              <span v-if="dayNextAchievementCondition" class="day-reward-foot-sub">{{ dayNextAchievementCondition }}</span>
             </div>
           </div>
 
@@ -564,32 +565,40 @@ const reviewNextMove = computed(() => {
 
   return t('plan.ai.next_step_stable', 'The baseline is steady. Protect the routines that already work before adding anything new.')
 })
-const dayNextBadge = computed(() => rewards.overview?.badges.find((badge) => !badge.earned) ?? null)
-const dayNextBadgeLabel = computed(() => {
-  if (!dayNextBadge.value) {
-    return t('reward.all_badges', 'All current badges earned')
-  }
+function achievementName(achievement) {
+  return t(`reward.achievement.${achievement.id.replace('-', '_')}`, achievement.id)
+}
 
-  const map = {
-    'first-focus': t('reward.badge.first_focus', 'First focus session'),
-    'focus-8': t('reward.badge.focus_8', '8 focus sessions'),
-    'focus-25': t('reward.badge.focus_25', '25 focus sessions'),
-    'perfect-day-1': t('reward.badge.perfect_day', 'First perfect day'),
-    'streak-3': t('reward.badge.streak_3', '3-day perfect streak'),
-    'streak-7': t('reward.badge.streak_7', '7-day perfect streak'),
-  }
-
-  return map[dayNextBadge.value.id] || dayNextBadge.value.id
-})
-const dayNextBadgeProgress = computed(() => {
-  if (!dayNextBadge.value) {
-    return t('reward.all_badges_sub', 'You have cleared the current reward set.')
-  }
-
-  return t('reward.badge_progress', '{progress}/{target}', {
-    progress: Math.min(dayNextBadge.value.progress, dayNextBadge.value.target),
-    target: dayNextBadge.value.target,
+function achievementConditionLabel(achievement) {
+  return t(`reward.achievement.condition.${achievement.metric.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`)}`, '{progress}/{target}', {
+    target: achievement.target,
   })
+}
+
+const dayNextAchievement = computed(() => rewards.overview?.achievements.find((achievement) => !achievement.earned) ?? null)
+const dayNextAchievementLabel = computed(() => {
+  if (!dayNextAchievement.value) {
+    return t('reward.all_achievements', 'All current achievements earned')
+  }
+
+  return achievementName(dayNextAchievement.value)
+})
+const dayNextAchievementProgress = computed(() => {
+  if (!dayNextAchievement.value) {
+    return t('reward.all_achievements_sub', 'You have cleared the current achievement set.')
+  }
+
+  return t('reward.achievement_progress', '{progress}/{target}', {
+    progress: Math.min(dayNextAchievement.value.progress, dayNextAchievement.value.target),
+    target: dayNextAchievement.value.target,
+  })
+})
+const dayNextAchievementCondition = computed(() => {
+  if (!dayNextAchievement.value) {
+    return ''
+  }
+
+  return achievementConditionLabel(dayNextAchievement.value)
 })
 
 const chartEl = ref(null)

@@ -217,29 +217,35 @@ const reviewNextMove = computed(() => {
     }
     return t('plan.ai.next_step_stable', 'The baseline is steady. Protect the routines that already work before adding anything new.');
 });
-const dayNextBadge = computed(() => rewards.overview?.badges.find((badge) => !badge.earned) ?? null);
-const dayNextBadgeLabel = computed(() => {
-    if (!dayNextBadge.value) {
-        return t('reward.all_badges', 'All current badges earned');
-    }
-    const map = {
-        'first-focus': t('reward.badge.first_focus', 'First focus session'),
-        'focus-8': t('reward.badge.focus_8', '8 focus sessions'),
-        'focus-25': t('reward.badge.focus_25', '25 focus sessions'),
-        'perfect-day-1': t('reward.badge.perfect_day', 'First perfect day'),
-        'streak-3': t('reward.badge.streak_3', '3-day perfect streak'),
-        'streak-7': t('reward.badge.streak_7', '7-day perfect streak'),
-    };
-    return map[dayNextBadge.value.id] || dayNextBadge.value.id;
-});
-const dayNextBadgeProgress = computed(() => {
-    if (!dayNextBadge.value) {
-        return t('reward.all_badges_sub', 'You have cleared the current reward set.');
-    }
-    return t('reward.badge_progress', '{progress}/{target}', {
-        progress: Math.min(dayNextBadge.value.progress, dayNextBadge.value.target),
-        target: dayNextBadge.value.target,
+function achievementName(achievement) {
+    return t(`reward.achievement.${achievement.id.replace('-', '_')}`, achievement.id);
+}
+function achievementConditionLabel(achievement) {
+    return t(`reward.achievement.condition.${achievement.metric.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`)}`, '{progress}/{target}', {
+        target: achievement.target,
     });
+}
+const dayNextAchievement = computed(() => rewards.overview?.achievements.find((achievement) => !achievement.earned) ?? null);
+const dayNextAchievementLabel = computed(() => {
+    if (!dayNextAchievement.value) {
+        return t('reward.all_achievements', 'All current achievements earned');
+    }
+    return achievementName(dayNextAchievement.value);
+});
+const dayNextAchievementProgress = computed(() => {
+    if (!dayNextAchievement.value) {
+        return t('reward.all_achievements_sub', 'You have cleared the current achievement set.');
+    }
+    return t('reward.achievement_progress', '{progress}/{target}', {
+        progress: Math.min(dayNextAchievement.value.progress, dayNextAchievement.value.target),
+        target: dayNextAchievement.value.target,
+    });
+});
+const dayNextAchievementCondition = computed(() => {
+    if (!dayNextAchievement.value) {
+        return '';
+    }
+    return achievementConditionLabel(dayNextAchievement.value);
 });
 const chartEl = ref(null);
 let chartInst = null;
@@ -689,17 +695,24 @@ if (__VLS_ctx.secondaryView === 'overview') {
             ...{ class: "day-reward-foot-label" },
         });
         /** @type {__VLS_StyleScopedClasses['day-reward-foot-label']} */ ;
-        (__VLS_ctx.t('reward.next_badge', 'Next badge'));
+        (__VLS_ctx.t('reward.next_achievement', 'Next achievement'));
         __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
             ...{ class: "day-reward-foot-value" },
         });
         /** @type {__VLS_StyleScopedClasses['day-reward-foot-value']} */ ;
-        (__VLS_ctx.dayNextBadgeLabel);
+        (__VLS_ctx.dayNextAchievementLabel);
         __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
             ...{ class: "day-reward-foot-sub" },
         });
         /** @type {__VLS_StyleScopedClasses['day-reward-foot-sub']} */ ;
-        (__VLS_ctx.dayNextBadgeProgress);
+        (__VLS_ctx.dayNextAchievementProgress);
+        if (__VLS_ctx.dayNextAchievementCondition) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+                ...{ class: "day-reward-foot-sub" },
+            });
+            /** @type {__VLS_StyleScopedClasses['day-reward-foot-sub']} */ ;
+            (__VLS_ctx.dayNextAchievementCondition);
+        }
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
             ...{ class: "s2-stats" },
         });
@@ -808,7 +821,7 @@ if (__VLS_ctx.secondaryView === 'overview') {
                 /** @type {__VLS_StyleScopedClasses['done']} */ ;
                 /** @type {__VLS_StyleScopedClasses['future']} */ ;
                 // @ts-ignore
-                [t, t, t, t, t, t, t, t, pct, doneCount, remainCount, plans, checks, secondaryView, secondaryView, rewards, rewards, rewards, dayNextBadgeLabel, dayNextBadgeProgress, prevMonth, monthLabel, nextMonth, daysInStrip, habitPlans,];
+                [t, t, t, t, t, t, t, t, pct, doneCount, remainCount, plans, checks, secondaryView, secondaryView, rewards, rewards, rewards, dayNextAchievementLabel, dayNextAchievementProgress, dayNextAchievementCondition, dayNextAchievementCondition, prevMonth, monthLabel, nextMonth, daysInStrip, habitPlans,];
             }
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
                 ...{ class: "day-pct" },
