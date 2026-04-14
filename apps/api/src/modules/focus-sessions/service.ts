@@ -12,6 +12,13 @@ import {
 import { pool } from '../../db/pool';
 import { calculateFocusReward } from '../rewards/logic';
 
+type LegacyFocusTimerSettings = {
+  focusMinutes?: number;
+  shortBreakMinutes?: number;
+  longBreakMinutes?: number;
+  cyclesBeforeLongBreak?: number;
+};
+
 type FocusSessionRow = {
   id: number;
   status: 'active' | 'paused' | 'completed' | 'canceled';
@@ -43,6 +50,19 @@ function normalizeDateTime(value: Date | string | null): string | null {
 
   const date = new Date(String(value));
   return Number.isNaN(date.getTime()) ? String(value) : date.toISOString();
+}
+
+function normalizeFocusTimerSettings(raw: unknown): FocusTimerSettings {
+  try {
+    return focusTimerSettingsSchema.parse(raw);
+  } catch {
+    const legacy = raw as LegacyFocusTimerSettings;
+    return focusTimerSettingsSchema.parse({
+      focusMinutes: legacy?.focusMinutes ?? DEFAULT_FOCUS_TIMER_SETTINGS.focusMinutes,
+      breakMinutes: legacy?.shortBreakMinutes ?? DEFAULT_FOCUS_TIMER_SETTINGS.breakMinutes,
+      cycles: legacy?.cyclesBeforeLongBreak ?? DEFAULT_FOCUS_TIMER_SETTINGS.cycles,
+    });
+  }
 }
 
 function mapFocusSession(row: FocusSessionRow): FocusSessionRecord {
@@ -130,7 +150,7 @@ export async function getFocusTimerSettings(user: AuthenticatedUser): Promise<Fo
   }
 
   try {
-    return focusTimerSettingsSchema.parse(JSON.parse(raw));
+    return normalizeFocusTimerSettings(JSON.parse(raw));
   } catch {
     return { ...DEFAULT_FOCUS_TIMER_SETTINGS };
   }
@@ -180,8 +200,8 @@ export async function startFocusSession(user: AuthenticatedUser, payload: unknow
   const input = startFocusSessionSchema.parse(payload);
   const savedSettings = await getFocusTimerSettings(user);
   const focusMinutes = input.focusMinutes ?? savedSettings.focusMinutes;
-  const breakMinutes = input.breakMinutes ?? savedSettings.shortBreakMinutes;
-  const cycleInterval = input.cycleInterval ?? savedSettings.cyclesBeforeLongBreak;
+  const breakMinutes = input.breakMinutes ?? savedSettings.breakMinutes;
+  const cycleInterval = input.cycleInterval ?? savedSettings.cycles;
 
   let planName: string | null = null;
   let planId: number | null = null;

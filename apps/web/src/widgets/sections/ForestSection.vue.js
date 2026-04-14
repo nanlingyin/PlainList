@@ -1,19 +1,13 @@
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
 import { computed, onMounted, ref } from 'vue';
-import { useChecksStore } from '@/features/checks/model/useChecksStore';
 import { useFocusStore } from '@/features/focus/model/useFocusStore';
-import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useRewardsStore } from '@/features/rewards/model/useRewardsStore';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 const focus = useFocusStore();
 const rewards = useRewardsStore();
-const plans = usePlansStore();
-const checks = useChecksStore();
 const i18n = useI18nStore();
 const selectedTree = ref(null);
-const makeupDate = ref('');
-const makeupPlanId = ref('');
 function t(key, fallback, params) {
     return i18n.t(key, fallback, params);
 }
@@ -61,30 +55,6 @@ function formatDateTime(value) {
     const date = new Date(value);
     return date.toLocaleString(i18n.locale === 'zh-CN' ? 'zh-CN' : 'en-US');
 }
-function itemName(itemId) {
-    if (itemId === 'makeup-card') {
-        return t('store.item.makeup_card', 'Makeup card');
-    }
-    return itemId;
-}
-function itemDescription(itemId) {
-    if (itemId === 'makeup-card') {
-        return t('store.item.makeup_card_desc', 'Repair one missed plan on one past day.');
-    }
-    return '';
-}
-async function buyItem(itemId) {
-    await rewards.purchaseItem(itemId, 1);
-}
-async function useMakeup() {
-    if (!makeupDate.value || !makeupPlanId.value) {
-        return;
-    }
-    await rewards.useMakeupCard(Number(makeupPlanId.value), makeupDate.value);
-    await checks.fetchRange(makeupDate.value, makeupDate.value);
-    makeupDate.value = '';
-    makeupPlanId.value = '';
-}
 onMounted(async () => {
     await focus.loadForest();
     if (!selectedTree.value && focus.forestSessions.length > 0) {
@@ -104,18 +74,12 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['forest-tree']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-tree']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-btn']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-header']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-main-grid']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-economy-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-summary-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-summary-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-grid']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-store-item']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-backpack-item']} */ ;
 /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
-/** @type {__VLS_StyleScopedClasses['forest-store-actions']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "forest-section" },
 });
@@ -345,7 +309,7 @@ if (__VLS_ctx.selectedTree) {
     });
     /** @type {__VLS_StyleScopedClasses['forest-detail-row']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-    (__VLS_ctx.t('forest.detail.cycle', 'Cycle setting'));
+    (__VLS_ctx.t('forest.detail.cycle', 'Cycles'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
     (__VLS_ctx.selectedTree.cycleInterval);
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
@@ -380,176 +344,7 @@ else {
     /** @type {__VLS_StyleScopedClasses['forest-empty']} */ ;
     (__VLS_ctx.t('forest.detail.prompt', 'Click any tree in the forest to see the linked focus session.'));
 }
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-economy-grid" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-economy-grid']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-panel']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel-head" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-panel-head']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel-title" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-panel-title']} */ ;
-(__VLS_ctx.t('forest.panel.store', 'Store'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel-sub" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-panel-sub']} */ ;
-(__VLS_ctx.t('forest.store.sub', 'Use points to buy support items.'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-store-list" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-store-list']} */ ;
-for (const [item] of __VLS_vFor((__VLS_ctx.rewards.overview?.storeItems ?? []))) {
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        key: (item.itemId),
-        ...{ class: "forest-store-item" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-store-item']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-store-name" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-store-name']} */ ;
-    (__VLS_ctx.itemName(item.itemId));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-store-desc" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-store-desc']} */ ;
-    (__VLS_ctx.itemDescription(item.itemId));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-store-actions" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-store-actions']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-        ...{ class: "forest-store-cost" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-store-cost']} */ ;
-    (item.pointsCost);
-    (__VLS_ctx.t('reward.points', 'Points'));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
-        ...{ onClick: (...[$event]) => {
-                __VLS_ctx.buyItem(item.itemId);
-                // @ts-ignore
-                [t, t, t, t, t, t, t, t, t, t, t, t, t, t, t, t, t, rewards, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, formatDateTime, itemName, itemDescription, buyItem,];
-            } },
-        ...{ class: "forest-btn" },
-        disabled: (__VLS_ctx.rewards.actionLoading),
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-btn']} */ ;
-    (__VLS_ctx.t('forest.store.buy', 'Buy'));
-    // @ts-ignore
-    [t, rewards,];
-}
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-panel']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel-head" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-panel-head']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel-title" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-panel-title']} */ ;
-(__VLS_ctx.t('forest.panel.backpack', 'Backpack'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-panel-sub" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-panel-sub']} */ ;
-(__VLS_ctx.t('forest.backpack.sub', 'Manage owned support items.'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-backpack-list" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-backpack-list']} */ ;
-for (const [item] of __VLS_vFor((__VLS_ctx.rewards.overview?.inventory ?? []))) {
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        key: (item.itemId),
-        ...{ class: "forest-backpack-item" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-backpack-item']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-    (__VLS_ctx.itemName(item.itemId));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({});
-    (item.quantity);
-    // @ts-ignore
-    [t, t, rewards, itemName,];
-}
-if (!(__VLS_ctx.rewards.overview?.inventory?.length)) {
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-empty-mini" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-empty-mini']} */ ;
-    (__VLS_ctx.t('forest.backpack.empty', 'No items in backpack yet.'));
-}
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-makeup-form" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-makeup-form']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "forest-makeup-title" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-makeup-title']} */ ;
-(__VLS_ctx.t('forest.makeup.title', 'Use makeup card'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
-    ...{ class: "forest-field" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-field']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-(__VLS_ctx.t('forest.makeup.date', 'Date'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.input, __VLS_intrinsics.input)({
-    type: "date",
-    ...{ class: "forest-input" },
-});
-(__VLS_ctx.makeupDate);
-/** @type {__VLS_StyleScopedClasses['forest-input']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
-    ...{ class: "forest-field" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-field']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-(__VLS_ctx.t('forest.makeup.plan', 'Plan'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.select, __VLS_intrinsics.select)({
-    value: (__VLS_ctx.makeupPlanId),
-    ...{ class: "forest-input" },
-});
-/** @type {__VLS_StyleScopedClasses['forest-input']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.option, __VLS_intrinsics.option)({
-    value: "",
-});
-(__VLS_ctx.t('forest.makeup.plan_select', 'Select plan'));
-for (const [plan] of __VLS_vFor((__VLS_ctx.plans.plans))) {
-    __VLS_asFunctionalElement1(__VLS_intrinsics.option, __VLS_intrinsics.option)({
-        key: (plan.id),
-        value: (String(plan.id)),
-    });
-    (plan.name);
-    // @ts-ignore
-    [t, t, t, t, t, rewards, makeupDate, makeupPlanId, plans,];
-}
-__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
-    ...{ onClick: (__VLS_ctx.useMakeup) },
-    ...{ class: "forest-btn wide" },
-    disabled: (__VLS_ctx.rewards.actionLoading),
-});
-/** @type {__VLS_StyleScopedClasses['forest-btn']} */ ;
-/** @type {__VLS_StyleScopedClasses['wide']} */ ;
-(__VLS_ctx.t('forest.makeup.use', 'Use card'));
-if (__VLS_ctx.rewards.actionError) {
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "forest-error" },
-    });
-    /** @type {__VLS_StyleScopedClasses['forest-error']} */ ;
-    (__VLS_ctx.rewards.actionError);
-}
 // @ts-ignore
-[t, rewards, rewards, rewards, useMakeup,];
+[t, t, t, t, t, t, t, t, t, t, t, t, t, t, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, selectedTree, formatDateTime,];
 const __VLS_export = (await import('vue')).defineComponent({});
 export default {};

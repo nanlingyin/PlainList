@@ -97,7 +97,7 @@
                         v-else
                         class="chk-box"
                         :class="checks.isChecked(plan.id, dateKey(cell.year, cell.month, cell.day)) ? 'chk-done' : ''"
-                        @click.stop="checks.toggle(plan.id, dateKey(cell.year, cell.month, cell.day))"
+                        @click.stop="handleCellClick(plan, cell)"
                       ></span>
                     </td>
                   </template>
@@ -146,6 +146,8 @@
         </template>
       </div>
 
+      <div v-if="trackerMessage" class="tracker-inline-message">{{ trackerMessage }}</div>
+
       <div class="tracker-summary">
         <div v-for="item in summary" :key="item.lbl" class="tsumm-item">
           <div class="tsumm-val">{{ item.val }}</div>
@@ -153,6 +155,51 @@
         </div>
       </div>
     </template>
+
+    <Teleport to="body">
+      <Transition name="day-popover-fade">
+        <div
+          v-if="makeupDialogOpen && pendingMakeup"
+          class="tracker-makeup-overlay"
+          @click="closeMakeupDialog"
+        >
+          <div class="tracker-makeup-dialog" @click.stop>
+            <div class="tracker-makeup-head">
+              <div>
+                <div class="tracker-makeup-title">{{ t('tracker.makeup.confirm_title', 'Use makeup card?') }}</div>
+                <div class="tracker-makeup-meta">{{ pendingMakeup.planName }} · {{ pendingMakeup.date }}</div>
+              </div>
+              <button class="tracker-makeup-close" type="button" @click="closeMakeupDialog">x</button>
+            </div>
+
+            <div class="tracker-makeup-copy">
+              <p>{{ t('tracker.makeup.confirm_body', 'Past missed dates must use a makeup card from here.') }}</p>
+              <p>{{ t('tracker.makeup.available_cards', 'Available makeup cards: {count}', { count: makeupCardCount }) }}</p>
+              <p>{{ t('tracker.makeup.consume_one', 'This action will consume 1 makeup card.') }}</p>
+            </div>
+
+            <div v-if="rewards.actionError" class="tracker-makeup-error">{{ rewards.actionError }}</div>
+            <div v-else-if="makeupCardCount <= 0" class="tracker-makeup-error">
+              {{ t('tracker.makeup.none', 'You do not have any makeup cards right now.') }}
+            </div>
+
+            <div class="tracker-makeup-actions">
+              <button class="tracker-makeup-btn tracker-makeup-btn-secondary" type="button" @click="closeMakeupDialog">
+                {{ t('tracker.makeup.cancel_action', 'Cancel') }}
+              </button>
+              <button
+                class="tracker-makeup-btn"
+                type="button"
+                :disabled="rewards.actionLoading || makeupCardCount <= 0"
+                @click="confirmMakeupCard"
+              >
+                {{ t('tracker.makeup.confirm_action', 'Use 1 card') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </section>
 </template>
 
@@ -172,6 +219,9 @@ function t(key, fallback, params) { return i18n.t(key, fallback, params) }
 const now = new Date()
 const trackerYear = ref(now.getFullYear())
 const trackerMonth = ref(now.getMonth())
+const makeupDialogOpen = ref(false)
+const pendingMakeup = ref(null)
+const trackerMessage = ref('')
 
 const MONTHS_DEFAULT = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const MONTHS_SHORT_DEFAULT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -191,6 +241,10 @@ function isFuture(cell) {
   const todayDate = new Date()
   todayDate.setHours(0, 0, 0, 0)
   return cellDate > todayDate
+}
+
+function isPastDateKey(key) {
+  return key < todayKey()
 }
 
 function getMonthWeeks(year, month) {
@@ -219,6 +273,7 @@ const tKey = computed(() => todayKey())
 const weeks = computed(() => getMonthWeeks(trackerYear.value, trackerMonth.value))
 const rewardReferenceDate = computed(() => `${trackerYear.value}-${String(trackerMonth.value + 1).padStart(2, '0')}-01`)
 const rewardSummary = computed(() => rewards.periods[`month:${rewardReferenceDate.value}`] || null)
+const makeupCardCount = computed(() => rewards.overview?.inventory?.find((item) => item.itemId === 'makeup-card')?.quantity ?? 0)
 
 const monthLabel = computed(() => (
   i18n.locale === 'zh-CN'
@@ -272,12 +327,73 @@ function mobileCellClasses(plan, cell) {
   ]
 }
 
-function onMobileCellClick(plan, cell) {
+function showTrackerMessage(message) {
+  trackerMessage.value = message
+  window.clearTimeout(showTrackerMessage.timer)
+  showTrackerMessage.timer = window.setTimeout(() => {
+    trackerMessage.value = ''
+  }, 2400)
+}
+showTrackerMessage.timer = 0
+
+function openMakeupDialog(plan, key) {
+  pendingMakeup.value = {
+    planId: plan.id,
+    planName: plan.name,
+    date: key,
+  }
+  rewards.actionError = ''
+  makeupDialogOpen.value = true
+}
+
+function closeMakeupDialog() {
+  makeupDialogOpen.value = false
+  pendingMakeup.value = null
+  rewards.actionError = ''
+}
+
+async function handleCellClick(plan, cell) {
   if (!cell || isFuture(cell)) {
     return
   }
 
-  checks.toggle(plan.id, dateKey(cell.year, cell.month, cell.day))
+  const key = dateKey(cell.year, cell.month, cell.day)
+  const checked = checks.isChecked(plan.id, key)
+
+  if (isPastDateKey(key)) {
+    if (checked) {
+      showTrackerMessage(t('tracker.makeup.past_locked', 'Past completed dates cannot be unchecked here.'))
+      return
+    }
+
+    openMakeupDialog(plan, key)
+    return
+  }
+
+  try {
+    await checks.toggle(plan.id, key)
+  } catch (error) {
+    showTrackerMessage(error instanceof Error ? error.message : t('tracker.makeup.toggle_failed', 'Unable to update this check right now.'))
+  }
+}
+
+function onMobileCellClick(plan, cell) {
+  handleCellClick(plan, cell)
+}
+
+async function confirmMakeupCard() {
+  if (!pendingMakeup.value) {
+    return
+  }
+
+  try {
+    await rewards.useMakeupCard(pendingMakeup.value.planId, pendingMakeup.value.date)
+    await checks.fetchRange(pendingMakeup.value.date, pendingMakeup.value.date)
+    showTrackerMessage(t('tracker.makeup.used', 'Makeup card used successfully.'))
+    closeMakeupDialog()
+  } catch (error) {
+    showTrackerMessage(error instanceof Error ? error.message : t('tracker.makeup.use_failed', 'Unable to use a makeup card right now.'))
+  }
 }
 
 const summary = computed(() => {
@@ -364,3 +480,107 @@ onMounted(async () => {
   await loadMonth()
 })
 </script>
+
+<style scoped>
+.tracker-inline-message {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.6;
+}
+
+.tracker-makeup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(10, 10, 10, .22);
+}
+
+.tracker-makeup-dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: min(420px, calc(100vw - 24px));
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--faint);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 28px 60px rgba(17, 17, 17, .16);
+  padding: 18px;
+}
+
+.tracker-makeup-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracker-makeup-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.tracker-makeup-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tracker-makeup-close {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.tracker-makeup-copy {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.7;
+}
+
+.tracker-makeup-error {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #8b3232;
+  line-height: 1.6;
+}
+
+.tracker-makeup-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.tracker-makeup-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  background: var(--dark);
+  color: var(--surface);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.tracker-makeup-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.tracker-makeup-btn-secondary {
+  background: transparent;
+  color: var(--dark);
+}
+</style>

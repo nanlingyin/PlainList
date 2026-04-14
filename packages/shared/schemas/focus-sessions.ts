@@ -28,9 +28,8 @@ export const startFocusSessionSchema = z.object({
 
 export const focusTimerSettingsSchema = z.object({
   focusMinutes: z.coerce.number().int().min(MIN_FOCUS_MINUTES).max(MAX_FOCUS_MINUTES),
-  shortBreakMinutes: z.coerce.number().int().min(MIN_BREAK_MINUTES).max(MAX_BREAK_MINUTES),
-  longBreakMinutes: z.coerce.number().int().min(MIN_BREAK_MINUTES).max(MAX_BREAK_MINUTES),
-  cyclesBeforeLongBreak: z.coerce.number().int().min(MIN_CYCLE_INTERVAL).max(MAX_CYCLE_INTERVAL),
+  breakMinutes: z.coerce.number().int().min(MIN_BREAK_MINUTES).max(MAX_BREAK_MINUTES),
+  cycles: z.coerce.number().int().min(MIN_CYCLE_INTERVAL).max(MAX_CYCLE_INTERVAL),
 });
 
 export const rewardPeriodQuerySchema = z.object({

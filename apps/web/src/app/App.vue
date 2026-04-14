@@ -57,11 +57,12 @@
       <WeekSection id="s3" class="app-section" style="--section-delay: 140ms" />
       <TrackerSection id="s4" class="app-section" style="--section-delay: 210ms" />
       <CalendarSection id="s5" class="app-section" style="--section-delay: 280ms" />
+      <StoreSection id="s6" class="app-section" style="--section-delay: 350ms" />
       <ForestSection
         v-if="pluginsStore.installedIds.has(FOCUS_FOREST_PLUGIN_ID)"
-        id="s6"
+        id="s7"
         class="app-section"
-        style="--section-delay: 350ms"
+        style="--section-delay: 420ms"
       />
 
       <PluginStore v-if="pluginStoreOpen" @close="onPluginStoreClose" />
@@ -89,6 +90,7 @@ import CalendarSection from '@/widgets/sections/CalendarSection.vue';
 import ClockSection from '@/widgets/sections/ClockSection.vue';
 import ForestSection from '@/widgets/sections/ForestSection.vue';
 import PlansSection from '@/widgets/sections/PlansSection.vue';
+import StoreSection from '@/widgets/sections/StoreSection.vue';
 import TrackerSection from '@/widgets/sections/TrackerSection.vue';
 import WeekSection from '@/widgets/sections/WeekSection.vue';
 
@@ -123,10 +125,11 @@ const sections = computed(() => {
     { id: 's3', label: i18n.t('nav.week', 'Week') },
     { id: 's4', label: i18n.t('nav.month', 'Month') },
     { id: 's5', label: i18n.t('nav.year', 'Year') },
+    { id: 's6', label: i18n.t('nav.store', 'Store') },
   ];
 
   if (pluginsStore.installedIds.has(FOCUS_FOREST_PLUGIN_ID)) {
-    base.push({ id: 's6', label: i18n.t('nav.forest', 'Forest') });
+    base.push({ id: 's7', label: i18n.t('nav.forest', 'Forest') });
   }
 
   return base;

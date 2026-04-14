@@ -1,6 +1,6 @@
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
-import { DEFAULT_FOCUS_MINUTES, DEFAULT_SHORT_BREAK_MINUTES, } from '@plainlist/shared';
+import { DEFAULT_BREAK_MINUTES, DEFAULT_CYCLES, DEFAULT_FOCUS_MINUTES, } from '@plainlist/shared';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useFocusStore } from '@/features/focus/model/useFocusStore';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
@@ -104,13 +104,14 @@ const secondaryActionLabel = computed(() => {
 });
 const focusMetaLabel = computed(() => {
     if (focus.mode === 'break') {
-        const breakMinutes = focus.breakMinutes === focus.settings.longBreakMinutes ? focus.settings.longBreakMinutes : focus.settings.shortBreakMinutes;
-        return t('focus.break_meta', '{minutes} min break', { minutes: breakMinutes });
+        return t('focus.break_meta', '{minutes} min break', {
+            minutes: focus.breakMinutes || focus.settings.breakMinutes || DEFAULT_BREAK_MINUTES,
+        });
     }
-    return t('focus.default_cycle', '{focus} min focus · {breakTime} min break · cycle {count}', {
+    return t('focus.default_cycle', '{focus} min focus · {breakTime} min break · cycle {cycles}', {
         focus: focus.activeSession?.focusMinutes ?? focus.settings.focusMinutes ?? DEFAULT_FOCUS_MINUTES,
-        breakTime: focus.activeSession?.breakMinutes ?? focus.settings.shortBreakMinutes ?? DEFAULT_SHORT_BREAK_MINUTES,
-        count: focus.activeSession?.cycleInterval ?? focus.settings.cyclesBeforeLongBreak,
+        breakTime: focus.activeSession?.breakMinutes ?? focus.settings.breakMinutes ?? DEFAULT_BREAK_MINUTES,
+        cycles: focus.activeSession?.cycleInterval ?? focus.settings.cycles ?? DEFAULT_CYCLES,
     });
 });
 function badgeName(badge) {
@@ -390,7 +391,7 @@ if (__VLS_ctx.settingsOpen && !__VLS_ctx.focus.activeSession && __VLS_ctx.focus.
     (__VLS_ctx.t('focus.settings.focus', 'Focus minutes'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.input, __VLS_intrinsics.input)({
         type: "number",
-        min: "10",
+        min: "5",
         max: "60",
         ...{ class: "focus-settings-input" },
     });
@@ -401,42 +402,28 @@ if (__VLS_ctx.settingsOpen && !__VLS_ctx.focus.activeSession && __VLS_ctx.focus.
     });
     /** @type {__VLS_StyleScopedClasses['focus-settings-field']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-    (__VLS_ctx.t('focus.settings.short_break', 'Short break'));
+    (__VLS_ctx.t('focus.settings.break', 'Break minutes'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.input, __VLS_intrinsics.input)({
         type: "number",
-        min: "3",
+        min: "1",
         max: "30",
         ...{ class: "focus-settings-input" },
     });
-    (__VLS_ctx.pendingSettings.shortBreakMinutes);
+    (__VLS_ctx.pendingSettings.breakMinutes);
     /** @type {__VLS_StyleScopedClasses['focus-settings-input']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
         ...{ class: "focus-settings-field" },
     });
     /** @type {__VLS_StyleScopedClasses['focus-settings-field']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-    (__VLS_ctx.t('focus.settings.long_break', 'Long break'));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.input, __VLS_intrinsics.input)({
-        type: "number",
-        min: "3",
-        max: "30",
-        ...{ class: "focus-settings-input" },
-    });
-    (__VLS_ctx.pendingSettings.longBreakMinutes);
-    /** @type {__VLS_StyleScopedClasses['focus-settings-input']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
-        ...{ class: "focus-settings-field" },
-    });
-    /** @type {__VLS_StyleScopedClasses['focus-settings-field']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-    (__VLS_ctx.t('focus.settings.cycle', 'Cycles before long break'));
+    (__VLS_ctx.t('focus.settings.cycles', 'Cycles'));
     __VLS_asFunctionalElement1(__VLS_intrinsics.input, __VLS_intrinsics.input)({
         type: "number",
         min: "2",
         max: "8",
         ...{ class: "focus-settings-input" },
     });
-    (__VLS_ctx.pendingSettings.cyclesBeforeLongBreak);
+    (__VLS_ctx.pendingSettings.cycles);
     /** @type {__VLS_StyleScopedClasses['focus-settings-input']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "focus-settings-actions" },
@@ -456,7 +443,7 @@ if (__VLS_ctx.settingsOpen && !__VLS_ctx.focus.activeSession && __VLS_ctx.focus.
                     return;
                 __VLS_ctx.settingsOpen = false;
                 // @ts-ignore
-                [t, t, t, t, t, t, t, focus, focus, focus, focus, focus, focus, focus, focus, onPrimaryAction, primaryActionLabel, secondaryActionLabel, secondaryActionLabel, onSecondaryAction, openSettings, settingsOpen, settingsOpen, pendingSettings, pendingSettings, pendingSettings, pendingSettings, saveSettings,];
+                [t, t, t, t, t, t, focus, focus, focus, focus, focus, focus, focus, focus, onPrimaryAction, primaryActionLabel, secondaryActionLabel, secondaryActionLabel, onSecondaryAction, openSettings, settingsOpen, settingsOpen, pendingSettings, pendingSettings, pendingSettings, saveSettings,];
             } },
         ...{ class: "focus-btn" },
         disabled: (__VLS_ctx.focus.loading),

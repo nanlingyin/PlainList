@@ -18,6 +18,7 @@ import CalendarSection from '@/widgets/sections/CalendarSection.vue';
 import ClockSection from '@/widgets/sections/ClockSection.vue';
 import ForestSection from '@/widgets/sections/ForestSection.vue';
 import PlansSection from '@/widgets/sections/PlansSection.vue';
+import StoreSection from '@/widgets/sections/StoreSection.vue';
 import TrackerSection from '@/widgets/sections/TrackerSection.vue';
 import WeekSection from '@/widgets/sections/WeekSection.vue';
 const auth = useAuthStore();
@@ -44,9 +45,10 @@ const sections = computed(() => {
         { id: 's3', label: i18n.t('nav.week', 'Week') },
         { id: 's4', label: i18n.t('nav.month', 'Month') },
         { id: 's5', label: i18n.t('nav.year', 'Year') },
+        { id: 's6', label: i18n.t('nav.store', 'Store') },
     ];
     if (pluginsStore.installedIds.has(FOCUS_FOREST_PLUGIN_ID)) {
-        base.push({ id: 's6', label: i18n.t('nav.forest', 'Forest') });
+        base.push({ id: 's7', label: i18n.t('nav.forest', 'Forest') });
     }
     return base;
 });
@@ -388,35 +390,48 @@ else {
         ...{ style: {} },
     }, ...__VLS_functionalComponentArgsRest(__VLS_44));
     /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
+    const __VLS_48 = StoreSection;
+    // @ts-ignore
+    const __VLS_49 = __VLS_asFunctionalComponent1(__VLS_48, new __VLS_48({
+        id: "s6",
+        ...{ class: "app-section" },
+        ...{ style: {} },
+    }));
+    const __VLS_50 = __VLS_49({
+        id: "s6",
+        ...{ class: "app-section" },
+        ...{ style: {} },
+    }, ...__VLS_functionalComponentArgsRest(__VLS_49));
+    /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
     if (__VLS_ctx.pluginsStore.installedIds.has(__VLS_ctx.FOCUS_FOREST_PLUGIN_ID)) {
-        const __VLS_48 = ForestSection;
+        const __VLS_53 = ForestSection;
         // @ts-ignore
-        const __VLS_49 = __VLS_asFunctionalComponent1(__VLS_48, new __VLS_48({
-            id: "s6",
+        const __VLS_54 = __VLS_asFunctionalComponent1(__VLS_53, new __VLS_53({
+            id: "s7",
             ...{ class: "app-section" },
             ...{ style: {} },
         }));
-        const __VLS_50 = __VLS_49({
-            id: "s6",
+        const __VLS_55 = __VLS_54({
+            id: "s7",
             ...{ class: "app-section" },
             ...{ style: {} },
-        }, ...__VLS_functionalComponentArgsRest(__VLS_49));
+        }, ...__VLS_functionalComponentArgsRest(__VLS_54));
         /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
     }
     if (__VLS_ctx.pluginStoreOpen) {
-        const __VLS_53 = PluginStore;
+        const __VLS_58 = PluginStore;
         // @ts-ignore
-        const __VLS_54 = __VLS_asFunctionalComponent1(__VLS_53, new __VLS_53({
+        const __VLS_59 = __VLS_asFunctionalComponent1(__VLS_58, new __VLS_58({
             ...{ 'onClose': {} },
         }));
-        const __VLS_55 = __VLS_54({
+        const __VLS_60 = __VLS_59({
             ...{ 'onClose': {} },
-        }, ...__VLS_functionalComponentArgsRest(__VLS_54));
-        let __VLS_58;
-        const __VLS_59 = ({ close: {} },
+        }, ...__VLS_functionalComponentArgsRest(__VLS_59));
+        let __VLS_63;
+        const __VLS_64 = ({ close: {} },
             { onClose: (__VLS_ctx.onPluginStoreClose) });
-        var __VLS_56;
-        var __VLS_57;
+        var __VLS_61;
+        var __VLS_62;
     }
 }
 // @ts-ignore

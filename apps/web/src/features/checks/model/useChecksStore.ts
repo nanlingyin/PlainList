@@ -1,5 +1,5 @@
 import type { ChecksByPlan } from '@plainlist/shared';
-import { getMonthRange } from '@plainlist/shared';
+import { getMonthRange, toDateKey } from '@plainlist/shared';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useAiReviewStore } from '@/features/ai-review/model/useAiReviewStore';
@@ -30,7 +30,15 @@ export const useChecksStore = defineStore('checks', () => {
     return Boolean(checks.value[String(planId)]?.[dateKey]);
   }
 
+  function isPastDate(dateKey: string) {
+    return dateKey < toDateKey(new Date());
+  }
+
   async function toggle(planId: number, dateKey: string) {
+    if (isPastDate(dateKey)) {
+      throw new Error('Past dates must use a makeup card');
+    }
+
     const planKey = String(planId);
     const current = isChecked(planKey, dateKey);
     const next = !current;

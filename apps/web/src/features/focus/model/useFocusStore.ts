@@ -1,7 +1,7 @@
 import type { FocusSessionRecord, FocusTimerSettings } from '@plainlist/shared';
 import {
+  DEFAULT_BREAK_MINUTES,
   DEFAULT_FOCUS_TIMER_SETTINGS,
-  DEFAULT_SHORT_BREAK_MINUTES,
 } from '@plainlist/shared';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
@@ -32,7 +32,7 @@ export const useFocusStore = defineStore('focus', () => {
   const phase = ref<FocusPhase>('focus');
   const running = ref(false);
   const remainingSeconds = ref(0);
-  const breakMinutes = ref(DEFAULT_SHORT_BREAK_MINUTES);
+  const breakMinutes = ref(DEFAULT_BREAK_MINUTES);
   const chainCount = ref(0);
   const loading = ref(false);
   const error = ref('');
@@ -87,7 +87,7 @@ export const useFocusStore = defineStore('focus', () => {
     phase.value = 'focus';
     running.value = false;
     remainingSeconds.value = 0;
-    breakMinutes.value = settings.value.shortBreakMinutes;
+    breakMinutes.value = settings.value.breakMinutes;
     endedAtIso.value = null;
     persistBreakState();
   }
@@ -95,7 +95,7 @@ export const useFocusStore = defineStore('focus', () => {
   async function loadSettings() {
     settings.value = await get<FocusTimerSettings>('/focus-sessions/settings');
     if (phase.value === 'focus' && !activeSession.value) {
-      breakMinutes.value = settings.value.shortBreakMinutes;
+      breakMinutes.value = settings.value.breakMinutes;
     }
     return settings.value;
   }
@@ -103,7 +103,7 @@ export const useFocusStore = defineStore('focus', () => {
   async function saveSettings(nextSettings: FocusTimerSettings) {
     settings.value = await put<FocusTimerSettings>('/focus-sessions/settings', nextSettings);
     if (phase.value === 'focus' && !activeSession.value) {
-      breakMinutes.value = settings.value.shortBreakMinutes;
+      breakMinutes.value = settings.value.breakMinutes;
     }
     return settings.value;
   }
@@ -136,9 +136,7 @@ export const useFocusStore = defineStore('focus', () => {
     try {
       const sessionId = activeSession.value.id;
       const completedSession = await post<FocusSessionRecord>(`/focus-sessions/${sessionId}/complete`);
-      const completedBreak = (chainCount.value + 1) % settings.value.cyclesBeforeLongBreak === 0
-        ? settings.value.longBreakMinutes
-        : settings.value.shortBreakMinutes;
+      const completedBreak = settings.value.breakMinutes;
       chainCount.value += 1;
       activeSession.value = null;
       phase.value = 'break';
@@ -290,8 +288,8 @@ export const useFocusStore = defineStore('focus', () => {
       const session = await post<FocusSessionRecord>('/focus-sessions/start', {
         planId: planId ?? undefined,
         focusMinutes: settings.value.focusMinutes,
-        breakMinutes: settings.value.shortBreakMinutes,
-        cycleInterval: settings.value.cyclesBeforeLongBreak,
+        breakMinutes: settings.value.breakMinutes,
+        cycleInterval: settings.value.cycles,
       });
       activeSession.value = session;
       phase.value = 'focus';
@@ -430,7 +428,7 @@ export const useFocusStore = defineStore('focus', () => {
     phase.value = 'focus';
     running.value = false;
     remainingSeconds.value = 0;
-    breakMinutes.value = DEFAULT_SHORT_BREAK_MINUTES;
+    breakMinutes.value = DEFAULT_BREAK_MINUTES;
     chainCount.value = 0;
     loading.value = false;
     error.value = '';

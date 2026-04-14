@@ -7,6 +7,18 @@ function serviceError(status: number, message: string): Error & { status: number
   return Object.assign(new Error(message), { status });
 }
 
+export function assertDirectCheckDateAllowed(date: string): void {
+  if (date < toDateKey(new Date())) {
+    throw serviceError(400, 'past dates must use a makeup card');
+  }
+}
+
+export function assertDirectChecksBatchDatesAllowed(dates: string[]): void {
+  dates.forEach((date) => {
+    assertDirectCheckDateAllowed(date);
+  });
+}
+
 function getDefaultRange(): { from: string; to: string } {
   const now = new Date();
   const previous = getPreviousMonth(now.getFullYear(), now.getMonth());
@@ -63,6 +75,7 @@ async function ensurePlanOwnership(user: AuthenticatedUser, planIds: number[]): 
 
 export async function upsertCheck(user: AuthenticatedUser, payload: unknown): Promise<void> {
   const input = checkUpsertSchema.parse(payload);
+  assertDirectCheckDateAllowed(input.date);
   await ensurePlanOwnership(user, [input.planId]);
 
   await pool.query(
@@ -74,6 +87,7 @@ export async function upsertCheck(user: AuthenticatedUser, payload: unknown): Pr
 
 export async function upsertChecksBatch(user: AuthenticatedUser, payload: unknown): Promise<number> {
   const input = batchChecksSchema.parse(payload);
+  assertDirectChecksBatchDatesAllowed(input.checks.map((item) => item.date));
   const planIds = [...new Set(input.checks.map((item) => item.planId))];
   await ensurePlanOwnership(user, planIds);
 

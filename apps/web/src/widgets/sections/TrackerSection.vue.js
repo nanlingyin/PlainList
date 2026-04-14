@@ -13,6 +13,9 @@ function t(key, fallback, params) { return i18n.t(key, fallback, params); }
 const now = new Date();
 const trackerYear = ref(now.getFullYear());
 const trackerMonth = ref(now.getMonth());
+const makeupDialogOpen = ref(false);
+const pendingMakeup = ref(null);
+const trackerMessage = ref('');
 const MONTHS_DEFAULT = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const MONTHS_SHORT_DEFAULT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WDAYS_M_DEFAULT = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -28,6 +31,9 @@ function isFuture(cell) {
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
     return cellDate > todayDate;
+}
+function isPastDateKey(key) {
+    return key < todayKey();
 }
 function getMonthWeeks(year, month) {
     const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -51,6 +57,7 @@ const tKey = computed(() => todayKey());
 const weeks = computed(() => getMonthWeeks(trackerYear.value, trackerMonth.value));
 const rewardReferenceDate = computed(() => `${trackerYear.value}-${String(trackerMonth.value + 1).padStart(2, '0')}-01`);
 const rewardSummary = computed(() => rewards.periods[`month:${rewardReferenceDate.value}`] || null);
+const makeupCardCount = computed(() => rewards.overview?.inventory?.find((item) => item.itemId === 'makeup-card')?.quantity ?? 0);
 const monthLabel = computed(() => (i18n.locale === 'zh-CN'
     ? `${trackerYear.value}年${trackerMonth.value + 1}月`
     : `${monthNames.value[trackerMonth.value]} ${trackerYear.value}`));
@@ -93,11 +100,65 @@ function mobileCellClasses(plan, cell) {
         key === tKey.value ? 'today' : '',
     ];
 }
-function onMobileCellClick(plan, cell) {
+function showTrackerMessage(message) {
+    trackerMessage.value = message;
+    window.clearTimeout(showTrackerMessage.timer);
+    showTrackerMessage.timer = window.setTimeout(() => {
+        trackerMessage.value = '';
+    }, 2400);
+}
+showTrackerMessage.timer = 0;
+function openMakeupDialog(plan, key) {
+    pendingMakeup.value = {
+        planId: plan.id,
+        planName: plan.name,
+        date: key,
+    };
+    rewards.actionError = '';
+    makeupDialogOpen.value = true;
+}
+function closeMakeupDialog() {
+    makeupDialogOpen.value = false;
+    pendingMakeup.value = null;
+    rewards.actionError = '';
+}
+async function handleCellClick(plan, cell) {
     if (!cell || isFuture(cell)) {
         return;
     }
-    checks.toggle(plan.id, dateKey(cell.year, cell.month, cell.day));
+    const key = dateKey(cell.year, cell.month, cell.day);
+    const checked = checks.isChecked(plan.id, key);
+    if (isPastDateKey(key)) {
+        if (checked) {
+            showTrackerMessage(t('tracker.makeup.past_locked', 'Past completed dates cannot be unchecked here.'));
+            return;
+        }
+        openMakeupDialog(plan, key);
+        return;
+    }
+    try {
+        await checks.toggle(plan.id, key);
+    }
+    catch (error) {
+        showTrackerMessage(error instanceof Error ? error.message : t('tracker.makeup.toggle_failed', 'Unable to update this check right now.'));
+    }
+}
+function onMobileCellClick(plan, cell) {
+    handleCellClick(plan, cell);
+}
+async function confirmMakeupCard() {
+    if (!pendingMakeup.value) {
+        return;
+    }
+    try {
+        await rewards.useMakeupCard(pendingMakeup.value.planId, pendingMakeup.value.date);
+        await checks.fetchRange(pendingMakeup.value.date, pendingMakeup.value.date);
+        showTrackerMessage(t('tracker.makeup.used', 'Makeup card used successfully.'));
+        closeMakeupDialog();
+    }
+    catch (error) {
+        showTrackerMessage(error instanceof Error ? error.message : t('tracker.makeup.use_failed', 'Unable to use a makeup card right now.'));
+    }
 }
 const summary = computed(() => {
     const year = trackerYear.value;
@@ -184,6 +245,7 @@ const __VLS_ctx = {
 let __VLS_components;
 let __VLS_intrinsics;
 let __VLS_directives;
+/** @type {__VLS_StyleScopedClasses['tracker-makeup-btn']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "tracker-section" },
 });
@@ -448,9 +510,9 @@ else {
                                             return;
                                         if (!!(__VLS_ctx.isFuture(cell)))
                                             return;
-                                        __VLS_ctx.checks.toggle(plan.id, __VLS_ctx.dateKey(cell.year, cell.month, cell.day));
+                                        __VLS_ctx.handleCellClick(plan, cell);
                                         // @ts-ignore
-                                        [t, weeks, weeks, weeks, dateKey, dateKey, tKey, groups, isFuture, isFuture, checks,];
+                                        [t, weeks, weeks, weeks, dateKey, tKey, groups, isFuture, isFuture, handleCellClick,];
                                     } },
                                 ...{ class: "chk-box" },
                                 ...{ class: (__VLS_ctx.checks.isChecked(plan.id, __VLS_ctx.dateKey(cell.year, cell.month, cell.day)) ? 'chk-done' : '') },
@@ -575,6 +637,13 @@ else {
         // @ts-ignore
         [];
     }
+    if (__VLS_ctx.trackerMessage) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "tracker-inline-message" },
+        });
+        /** @type {__VLS_StyleScopedClasses['tracker-inline-message']} */ ;
+        (__VLS_ctx.trackerMessage);
+    }
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "tracker-summary" },
     });
@@ -596,9 +665,115 @@ else {
         /** @type {__VLS_StyleScopedClasses['tsumm-lbl']} */ ;
         (item.lbl);
         // @ts-ignore
-        [summary,];
+        [trackerMessage, trackerMessage, summary,];
     }
 }
+let __VLS_0;
+/** @ts-ignore @type {typeof __VLS_components.Teleport | typeof __VLS_components.Teleport} */
+Teleport;
+// @ts-ignore
+const __VLS_1 = __VLS_asFunctionalComponent1(__VLS_0, new __VLS_0({
+    to: "body",
+}));
+const __VLS_2 = __VLS_1({
+    to: "body",
+}, ...__VLS_functionalComponentArgsRest(__VLS_1));
+const { default: __VLS_5 } = __VLS_3.slots;
+let __VLS_6;
+/** @ts-ignore @type {typeof __VLS_components.Transition | typeof __VLS_components.Transition} */
+Transition;
+// @ts-ignore
+const __VLS_7 = __VLS_asFunctionalComponent1(__VLS_6, new __VLS_6({
+    name: "day-popover-fade",
+}));
+const __VLS_8 = __VLS_7({
+    name: "day-popover-fade",
+}, ...__VLS_functionalComponentArgsRest(__VLS_7));
+const { default: __VLS_11 } = __VLS_9.slots;
+if (__VLS_ctx.makeupDialogOpen && __VLS_ctx.pendingMakeup) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ onClick: (__VLS_ctx.closeMakeupDialog) },
+        ...{ class: "tracker-makeup-overlay" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-overlay']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ onClick: () => { } },
+        ...{ class: "tracker-makeup-dialog" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-dialog']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-makeup-head" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-head']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-makeup-title" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-title']} */ ;
+    (__VLS_ctx.t('tracker.makeup.confirm_title', 'Use makeup card?'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-makeup-meta" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-meta']} */ ;
+    (__VLS_ctx.pendingMakeup.planName);
+    (__VLS_ctx.pendingMakeup.date);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+        ...{ onClick: (__VLS_ctx.closeMakeupDialog) },
+        ...{ class: "tracker-makeup-close" },
+        type: "button",
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-close']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-makeup-copy" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-copy']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
+    (__VLS_ctx.t('tracker.makeup.confirm_body', 'Past missed dates must use a makeup card from here.'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
+    (__VLS_ctx.t('tracker.makeup.available_cards', 'Available makeup cards: {count}', { count: __VLS_ctx.makeupCardCount }));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
+    (__VLS_ctx.t('tracker.makeup.consume_one', 'This action will consume 1 makeup card.'));
+    if (__VLS_ctx.rewards.actionError) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "tracker-makeup-error" },
+        });
+        /** @type {__VLS_StyleScopedClasses['tracker-makeup-error']} */ ;
+        (__VLS_ctx.rewards.actionError);
+    }
+    else if (__VLS_ctx.makeupCardCount <= 0) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "tracker-makeup-error" },
+        });
+        /** @type {__VLS_StyleScopedClasses['tracker-makeup-error']} */ ;
+        (__VLS_ctx.t('tracker.makeup.none', 'You do not have any makeup cards right now.'));
+    }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-makeup-actions" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-actions']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+        ...{ onClick: (__VLS_ctx.closeMakeupDialog) },
+        ...{ class: "tracker-makeup-btn tracker-makeup-btn-secondary" },
+        type: "button",
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-btn']} */ ;
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-btn-secondary']} */ ;
+    (__VLS_ctx.t('tracker.makeup.cancel_action', 'Cancel'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+        ...{ onClick: (__VLS_ctx.confirmMakeupCard) },
+        ...{ class: "tracker-makeup-btn" },
+        type: "button",
+        disabled: (__VLS_ctx.rewards.actionLoading || __VLS_ctx.makeupCardCount <= 0),
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-makeup-btn']} */ ;
+    (__VLS_ctx.t('tracker.makeup.confirm_action', 'Use 1 card'));
+}
+// @ts-ignore
+[t, t, t, t, t, t, t, makeupDialogOpen, pendingMakeup, pendingMakeup, pendingMakeup, closeMakeupDialog, closeMakeupDialog, closeMakeupDialog, makeupCardCount, makeupCardCount, makeupCardCount, rewards, rewards, rewards, confirmMakeupCard,];
+var __VLS_9;
+// @ts-ignore
+[];
+var __VLS_3;
 // @ts-ignore
 [];
 const __VLS_export = (await import('vue')).defineComponent({});

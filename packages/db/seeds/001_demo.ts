@@ -1,11 +1,11 @@
 import bcrypt from 'bcryptjs';
 import type { Pool } from 'mysql2/promise';
 import {
+  DEFAULT_BREAK_MINUTES,
+  DEFAULT_CYCLES,
   DEFAULT_FOCUS_MINUTES,
-  DEFAULT_SHORT_BREAK_MINUTES,
   FOCUS_SESSION_EXPERIENCE,
   FOCUS_SESSION_POINTS,
-  LONG_BREAK_INTERVAL,
   DEMO_ACCOUNT,
   DEMO_THEME_ID,
   THEME_PLUGIN_ID,
@@ -159,8 +159,8 @@ async function seedDemoFocusSessions(pool: Pool, userId: number, plans: Array<{ 
         plan?.name ?? null,
         'completed',
         DEFAULT_FOCUS_MINUTES,
-        DEFAULT_SHORT_BREAK_MINUTES,
-        LONG_BREAK_INTERVAL,
+        DEFAULT_BREAK_MINUTES,
+        DEFAULT_CYCLES,
         0,
         FOCUS_SESSION_POINTS,
         FOCUS_SESSION_EXPERIENCE,

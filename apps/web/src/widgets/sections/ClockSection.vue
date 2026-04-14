@@ -76,16 +76,12 @@
                 <input v-model.number="pendingSettings.focusMinutes" type="number" min="5" max="60" class="focus-settings-input">
               </label>
               <label class="focus-settings-field">
-                <span>{{ t('focus.settings.short_break', 'Short break') }}</span>
-                <input v-model.number="pendingSettings.shortBreakMinutes" type="number" min="1" max="30" class="focus-settings-input">
+                <span>{{ t('focus.settings.break', 'Break minutes') }}</span>
+                <input v-model.number="pendingSettings.breakMinutes" type="number" min="1" max="30" class="focus-settings-input">
               </label>
               <label class="focus-settings-field">
-                <span>{{ t('focus.settings.long_break', 'Long break') }}</span>
-                <input v-model.number="pendingSettings.longBreakMinutes" type="number" min="1" max="30" class="focus-settings-input">
-              </label>
-              <label class="focus-settings-field">
-                <span>{{ t('focus.settings.cycle', 'Cycles before long break') }}</span>
-                <input v-model.number="pendingSettings.cyclesBeforeLongBreak" type="number" min="2" max="8" class="focus-settings-input">
+                <span>{{ t('focus.settings.cycles', 'Cycles') }}</span>
+                <input v-model.number="pendingSettings.cycles" type="number" min="2" max="8" class="focus-settings-input">
               </label>
               <div class="focus-settings-actions">
                 <button class="focus-btn primary" :disabled="focus.loading" @click="saveSettings">
@@ -175,9 +171,9 @@
 <script setup lang="ts">
 import type { FocusTimerSettings, RewardBadgeProgress, RewardEvent } from '@plainlist/shared'
 import {
+  DEFAULT_BREAK_MINUTES,
+  DEFAULT_CYCLES,
   DEFAULT_FOCUS_MINUTES,
-  DEFAULT_LONG_BREAK_MINUTES,
-  DEFAULT_SHORT_BREAK_MINUTES,
 } from '@plainlist/shared'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useFocusStore } from '@/features/focus/model/useFocusStore'
@@ -307,14 +303,15 @@ const secondaryActionLabel = computed(() => {
 })
 const focusMetaLabel = computed(() => {
   if (focus.mode === 'break') {
-    const breakMinutes = focus.breakMinutes === focus.settings.longBreakMinutes ? focus.settings.longBreakMinutes : focus.settings.shortBreakMinutes
-    return t('focus.break_meta', '{minutes} min break', { minutes: breakMinutes })
+    return t('focus.break_meta', '{minutes} min break', {
+      minutes: focus.breakMinutes || focus.settings.breakMinutes || DEFAULT_BREAK_MINUTES,
+    })
   }
 
-  return t('focus.default_cycle', '{focus} min focus · {breakTime} min break · cycle {count}', {
+  return t('focus.default_cycle', '{focus} min focus · {breakTime} min break · cycle {cycles}', {
     focus: focus.activeSession?.focusMinutes ?? focus.settings.focusMinutes ?? DEFAULT_FOCUS_MINUTES,
-    breakTime: focus.activeSession?.breakMinutes ?? focus.settings.shortBreakMinutes ?? DEFAULT_SHORT_BREAK_MINUTES,
-    count: focus.activeSession?.cycleInterval ?? focus.settings.cyclesBeforeLongBreak,
+    breakTime: focus.activeSession?.breakMinutes ?? focus.settings.breakMinutes ?? DEFAULT_BREAK_MINUTES,
+    cycles: focus.activeSession?.cycleInterval ?? focus.settings.cycles ?? DEFAULT_CYCLES,
   })
 })
 

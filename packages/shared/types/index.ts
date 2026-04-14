@@ -52,9 +52,8 @@ export interface FocusSessionRecord {
 
 export interface FocusTimerSettings {
   focusMinutes: number;
-  shortBreakMinutes: number;
-  longBreakMinutes: number;
-  cyclesBeforeLongBreak: number;
+  breakMinutes: number;
+  cycles: number;
 }
 
 export type AiReviewPeriod = 'day' | 'week' | 'month' | 'year';
