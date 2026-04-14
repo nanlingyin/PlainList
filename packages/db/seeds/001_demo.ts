@@ -1,6 +1,16 @@
 import bcrypt from 'bcryptjs';
 import type { Pool } from 'mysql2/promise';
-import { DEMO_ACCOUNT, DEMO_THEME_ID, THEME_PLUGIN_ID, USER_SETTING_KEYS } from '@plainlist/shared';
+import {
+  DEFAULT_FOCUS_MINUTES,
+  DEFAULT_SHORT_BREAK_MINUTES,
+  FOCUS_SESSION_EXPERIENCE,
+  FOCUS_SESSION_POINTS,
+  LONG_BREAK_INTERVAL,
+  DEMO_ACCOUNT,
+  DEMO_THEME_ID,
+  THEME_PLUGIN_ID,
+  USER_SETTING_KEYS,
+} from '@plainlist/shared';
 
 const demoPlans: Array<[type: 'habit' | 'todo', name: string, time: string]> = [
   ['habit', 'Morning stretching', '06:30'],
@@ -50,6 +60,11 @@ async function upsertDemoUser(pool: Pool): Promise<number> {
 }
 
 async function clearDemoData(pool: Pool, userId: number): Promise<void> {
+  await pool.query('DELETE FROM makeup_card_uses WHERE user_id = ?', [userId]);
+  await pool.query('DELETE FROM store_purchases WHERE user_id = ?', [userId]);
+  await pool.query('DELETE FROM user_inventory WHERE user_id = ?', [userId]);
+  await pool.query('DELETE FROM focus_sessions WHERE user_id = ?', [userId]);
+  await pool.query('DELETE FROM user_settings WHERE user_id = ?', [userId]);
   await pool.query(
     'DELETE c FROM checks c INNER JOIN plans p ON p.id = c.plan_id WHERE p.user_id = ?',
     [userId],
@@ -79,9 +94,10 @@ async function seedDemoSettings(pool: Pool, userId: number): Promise<void> {
   );
 }
 
-async function seedDemoPlans(pool: Pool, userId: number): Promise<void> {
+async function seedDemoPlans(pool: Pool, userId: number): Promise<Array<{ id: number; name: string }>> {
   const today = new Date();
   const checks: Array<[number, string, number]> = [];
+  const planRefs: Array<{ id: number; name: string }> = [];
 
   for (const [index, [type, name, time]] of demoPlans.entries()) {
     const [planResult] = await pool.query(
@@ -90,6 +106,7 @@ async function seedDemoPlans(pool: Pool, userId: number): Promise<void> {
     );
 
     const planId = Number((planResult as { insertId: number }).insertId);
+    planRefs.push({ id: planId, name });
 
     for (let monthOffset = 0; monthOffset < 3; monthOffset += 1) {
       const cursorMonth = new Date(today.getFullYear(), today.getMonth() - monthOffset, 1);
@@ -113,12 +130,73 @@ async function seedDemoPlans(pool: Pool, userId: number): Promise<void> {
       checks.flat(),
     );
   }
+
+  return planRefs;
+}
+
+async function seedDemoFocusSessions(pool: Pool, userId: number, plans: Array<{ id: number; name: string }>): Promise<void> {
+  await pool.query('DELETE FROM focus_sessions WHERE user_id = ?', [userId]);
+
+  const today = new Date();
+  const sessions: Array<[number, number | null, string | null, string, number, number, number, number, number, number, string, string]> = [];
+  const focusPerDay = [2, 1, 0, 3, 2, 1, 2, 0, 1, 2, 3, 1];
+
+  for (let index = 0; index < focusPerDay.length; index += 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - index);
+    date.setHours(0, 0, 0, 0);
+
+    for (let count = 0; count < focusPerDay[index]; count += 1) {
+      const plan = plans[(index + count) % plans.length] ?? null;
+      const startedAt = new Date(date);
+      startedAt.setHours(8 + count * 2, 0, 0, 0);
+      const endedAt = new Date(startedAt);
+      endedAt.setMinutes(endedAt.getMinutes() + DEFAULT_FOCUS_MINUTES);
+
+      sessions.push([
+        userId,
+        plan?.id ?? null,
+        plan?.name ?? null,
+        'completed',
+        DEFAULT_FOCUS_MINUTES,
+        DEFAULT_SHORT_BREAK_MINUTES,
+        LONG_BREAK_INTERVAL,
+        0,
+        FOCUS_SESSION_POINTS,
+        FOCUS_SESSION_EXPERIENCE,
+        startedAt.toISOString().slice(0, 19).replace('T', ' '),
+        endedAt.toISOString().slice(0, 19).replace('T', ' '),
+      ]);
+    }
+  }
+
+  if (sessions.length > 0) {
+    const placeholders = sessions.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+    await pool.query(
+      `INSERT INTO focus_sessions (
+        user_id,
+        plan_id,
+        plan_name_snapshot,
+        status,
+        focus_minutes,
+        break_minutes,
+        cycle_interval,
+        accumulated_pause_seconds,
+        points_awarded,
+        experience_awarded,
+        started_at,
+        ended_at
+      ) VALUES ${placeholders}`,
+      sessions.flat(),
+    );
+  }
 }
 
 export async function runDemoSeed(pool: Pool): Promise<void> {
   const demoUserId = await upsertDemoUser(pool);
   await clearDemoData(pool, demoUserId);
-  await seedDemoPlans(pool, demoUserId);
+  const seededPlans = await seedDemoPlans(pool, demoUserId);
+  await seedDemoFocusSessions(pool, demoUserId, seededPlans);
   await seedDemoSettings(pool, demoUserId);
   console.log(`Demo account refreshed: ${DEMO_ACCOUNT.username} / ${DEMO_ACCOUNT.password}`);
 }

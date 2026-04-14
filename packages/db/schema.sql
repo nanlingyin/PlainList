@@ -43,3 +43,59 @@ CREATE TABLE IF NOT EXISTS user_settings (
   UNIQUE KEY uk_user_key (user_id, key_name),
   CONSTRAINT fk_user_settings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS focus_sessions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  plan_id BIGINT UNSIGNED NULL,
+  plan_name_snapshot VARCHAR(200) NULL,
+  status ENUM('active', 'paused', 'completed', 'canceled') NOT NULL DEFAULT 'active',
+  focus_minutes SMALLINT UNSIGNED NOT NULL DEFAULT 25,
+  break_minutes SMALLINT UNSIGNED NOT NULL DEFAULT 5,
+  cycle_interval SMALLINT UNSIGNED NOT NULL DEFAULT 4,
+  accumulated_pause_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+  points_awarded INT UNSIGNED NOT NULL DEFAULT 0,
+  experience_awarded INT UNSIGNED NOT NULL DEFAULT 0,
+  started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  paused_at TIMESTAMP NULL DEFAULT NULL,
+  ended_at TIMESTAMP NULL DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_focus_sessions_user_started (user_id, started_at),
+  INDEX idx_focus_sessions_user_status (user_id, status),
+  CONSTRAINT fk_focus_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_focus_sessions_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_inventory (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  item_id VARCHAR(64) NOT NULL,
+  quantity INT UNSIGNED NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_user_inventory (user_id, item_id),
+  CONSTRAINT fk_user_inventory_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS store_purchases (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  item_id VARCHAR(64) NOT NULL,
+  quantity INT UNSIGNED NOT NULL DEFAULT 1,
+  points_spent INT UNSIGNED NOT NULL DEFAULT 0,
+  purchased_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_store_purchases_user (user_id, purchased_at),
+  CONSTRAINT fk_store_purchases_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS makeup_card_uses (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  plan_id BIGINT UNSIGNED NOT NULL,
+  check_date DATE NOT NULL,
+  used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_makeup_target (user_id, plan_id, check_date),
+  INDEX idx_makeup_user_date (user_id, check_date),
+  CONSTRAINT fk_makeup_card_uses_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_makeup_card_uses_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

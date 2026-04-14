@@ -7,6 +7,25 @@
       <button class="s3-btn s3-today-btn" @click="goToday">{{ t('tracker.today', 'Today') }}</button>
     </div>
 
+    <div v-if="rewardSummary" class="tracker-reward-summary">
+      <div class="tracker-reward-item">
+        <span class="tracker-reward-label">{{ t('reward.points', 'Points') }}</span>
+        <strong class="tracker-reward-value">{{ rewardSummary.points }}</strong>
+      </div>
+      <div class="tracker-reward-item">
+        <span class="tracker-reward-label">{{ t('reward.focus_sessions', 'Focus sessions') }}</span>
+        <strong class="tracker-reward-value">{{ rewardSummary.completedFocusSessions }}</strong>
+      </div>
+      <div class="tracker-reward-item">
+        <span class="tracker-reward-label">{{ t('reward.perfect_days', 'Perfect days') }}</span>
+        <strong class="tracker-reward-value">{{ rewardSummary.perfectDays }}</strong>
+      </div>
+      <div class="tracker-reward-item">
+        <span class="tracker-reward-label">{{ t('reward.badges', 'Badges') }}</span>
+        <strong class="tracker-reward-value">{{ rewardSummary.earnedBadges }}</strong>
+      </div>
+    </div>
+
     <div v-if="!plans.plans.length" class="empty-state">
       <div class="empty-state-text">{{ t('tracker.empty', 'Add plans in the Day section to start tracking') }}</div>
     </div>
@@ -141,10 +160,12 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { usePlansStore } from '@/features/plans/model/usePlansStore'
 import { useChecksStore } from '@/features/checks/model/useChecksStore'
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore'
 import { useI18nStore } from '@/shared/i18n/useI18nStore'
 
 const plans = usePlansStore()
 const checks = useChecksStore()
+const rewards = useRewardsStore()
 const i18n = useI18nStore()
 function t(key, fallback, params) { return i18n.t(key, fallback, params) }
 
@@ -196,6 +217,8 @@ const weekDayHeaders = computed(() => i18n.L('WDAYS_M', WDAYS_M_DEFAULT))
 
 const tKey = computed(() => todayKey())
 const weeks = computed(() => getMonthWeeks(trackerYear.value, trackerMonth.value))
+const rewardReferenceDate = computed(() => `${trackerYear.value}-${String(trackerMonth.value + 1).padStart(2, '0')}-01`)
+const rewardSummary = computed(() => rewards.periods[`month:${rewardReferenceDate.value}`] || null)
 
 const monthLabel = computed(() => (
   i18n.locale === 'zh-CN'
@@ -332,6 +355,9 @@ async function loadMonth() {
 }
 
 watch([trackerYear, trackerMonth], loadMonth)
+watch(rewardReferenceDate, (referenceDate) => {
+  rewards.fetchPeriod('month', referenceDate).catch(() => {})
+}, { immediate: true })
 
 onMounted(async () => {
   if (!plans.plans.length) await plans.fetch()

@@ -566,7 +566,7 @@
     #s1 .sec-tag span { color: color-mix(in srgb, var(--bg) 60%, transparent); }
     .s1-grid {
       display: grid; grid-template-columns: 1fr 1fr;
-      height: calc(100vh - 52px); align-items: center;
+      min-height: calc(100vh - 52px); height: auto; align-items: center;
     }
     .clock-panel { padding: 0 40px 0 0; border-right: 1px solid color-mix(in srgb, var(--bg) 15%, transparent); }
     #clock-time {
@@ -577,7 +577,242 @@
     #clock-date { margin-top: 20px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in srgb, var(--bg) 55%, transparent); }
     #clock-week { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: color-mix(in srgb, var(--bg) 40%, transparent); margin-top: 6px; }
     .clock-motto { margin-top: 48px; font-size: 11px; letter-spacing: .1em; color: color-mix(in srgb, var(--bg) 45%, transparent); text-transform: uppercase; }
-    .progress-panel { padding: 0 0 0 56px; display: flex; flex-direction: column; gap: 40px; }
+    .progress-panel { padding: 0 0 0 56px; display: flex; flex-direction: column; gap: 32px; }
+    .focus-panel .sec-tag,
+    .progress-shell .sec-tag { margin-bottom: 10px; }
+    .focus-panel { display: flex; flex-direction: column; gap: 16px; }
+    .focus-card,
+    .focus-reward-grid,
+    .focus-foot {
+      border: 1px solid color-mix(in srgb, var(--bg) 14%, transparent);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--dark) 88%, var(--bg) 12%);
+      box-shadow: 0 20px 44px rgba(0,0,0,.16);
+    }
+    .focus-card { padding: 18px; }
+    .focus-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .focus-phase {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--bg) 70%, transparent);
+    }
+    .focus-phase-sub {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: color-mix(in srgb, var(--bg) 58%, transparent);
+      max-width: 30ch;
+    }
+    .focus-today-points {
+      min-width: 88px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--bg) 6%, transparent);
+      text-align: right;
+    }
+    .focus-today-points strong {
+      display: block;
+      font-family: var(--mono);
+      font-size: 24px;
+      line-height: 1;
+      color: var(--bg);
+    }
+    .focus-today-points span {
+      display: block;
+      margin-top: 5px;
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--bg) 48%, transparent);
+    }
+    .focus-level-chip {
+      display: inline-flex;
+      margin-top: 8px;
+      font-style: normal;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--bg) 68%, transparent);
+    }
+    .focus-display {
+      margin-top: 18px;
+      font-family: var(--mono);
+      font-size: clamp(42px, 5vw, 62px);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -.05em;
+      color: var(--bg);
+    }
+    .focus-plan-row,
+    .focus-break-copy {
+      margin-top: 16px;
+    }
+    .focus-plan-label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--bg) 48%, transparent);
+      margin-bottom: 8px;
+    }
+    .focus-plan-select {
+      width: 100%;
+      border: 1px solid color-mix(in srgb, var(--bg) 14%, transparent);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--dark) 86%, var(--bg) 12%);
+      color: var(--bg);
+      padding: 10px 12px;
+      font-family: var(--font);
+      font-size: 13px;
+      outline: none;
+    }
+    .focus-break-copy {
+      font-size: 12px;
+      line-height: 1.7;
+      color: color-mix(in srgb, var(--bg) 58%, transparent);
+    }
+    .focus-actions {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .focus-btn {
+      min-height: 36px;
+      padding: 0 14px;
+      border: 1px solid color-mix(in srgb, var(--bg) 14%, transparent);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--bg);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .focus-btn:hover {
+      background: color-mix(in srgb, var(--bg) 8%, transparent);
+    }
+    .focus-btn.primary {
+      background: var(--bg);
+      color: var(--dark);
+      border-color: var(--bg);
+    }
+    .focus-btn.primary:hover {
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+    }
+    .focus-btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .focus-meta {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      font-size: 10px;
+      letter-spacing: .08em;
+      color: color-mix(in srgb, var(--bg) 44%, transparent);
+      text-transform: uppercase;
+    }
+    .focus-settings {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid color-mix(in srgb, var(--bg) 12%, transparent);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .focus-settings-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      color: color-mix(in srgb, var(--bg) 58%, transparent);
+    }
+    .focus-settings-input {
+      min-height: 36px;
+      border: 1px solid color-mix(in srgb, var(--bg) 14%, transparent);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--dark) 86%, var(--bg) 12%);
+      color: var(--bg);
+      padding: 0 12px;
+      font-size: 13px;
+      outline: none;
+    }
+    .focus-settings-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .focus-error {
+      margin-top: 14px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #f4c2c2;
+    }
+    .focus-reward-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+    }
+    .focus-reward-card {
+      padding: 14px 16px;
+      background: transparent;
+    }
+    .focus-reward-kicker {
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--bg) 46%, transparent);
+    }
+    .focus-reward-value {
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: 24px;
+      color: var(--bg);
+    }
+    .focus-foot {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+    }
+    .focus-next-badge,
+    .focus-last-event {
+      padding: 14px 16px;
+    }
+    .focus-foot-label {
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--bg) 46%, transparent);
+    }
+    .focus-foot-value {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--bg);
+    }
+    .focus-foot-sub {
+      margin-top: 5px;
+      font-size: 11px;
+      line-height: 1.6;
+      color: color-mix(in srgb, var(--bg) 56%, transparent);
+    }
+    .progress-shell { display: flex; flex-direction: column; gap: 24px; }
     .prog-item { display: flex; flex-direction: column; gap: 12px; }
     .prog-header { display: flex; justify-content: space-between; align-items: baseline; }
     .prog-label { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: color-mix(in srgb, var(--bg) 50%, transparent); }
@@ -1117,6 +1352,60 @@
       gap: 14px;
       padding-top: 2px;
     }
+    .day-reward-panel {
+      border: 1px solid var(--faint);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+      overflow: hidden;
+    }
+    .day-reward-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--faint);
+    }
+    .day-reward-item {
+      padding: 14px 16px;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .day-reward-label {
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .day-reward-value {
+      font-family: var(--mono);
+      font-size: 24px;
+      line-height: 1;
+      color: var(--dark);
+    }
+    .day-reward-foot {
+      padding: 12px 16px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: baseline;
+      background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+    }
+    .day-reward-foot-label {
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .day-reward-foot-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    .day-reward-foot-sub {
+      font-size: 11px;
+      color: var(--mid);
+    }
     .day-secondary-empty {
       padding: 16px 18px;
       border-radius: 12px;
@@ -1523,6 +1812,31 @@
       text-transform: uppercase;
       font-size: 10px;
     }
+    .tracker-reward-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .tracker-reward-item {
+      border: 1px solid var(--faint);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+      padding: 14px 16px;
+    }
+    .tracker-reward-label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .tracker-reward-value {
+      display: block;
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: 22px;
+      color: var(--dark);
+    }
     .tracker-table-wrap {
       overflow: auto;
       max-height: min(72vh, 760px);
@@ -1712,6 +2026,11 @@
       .s2-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+      .focus-reward-grid,
+      .day-reward-grid,
+      .tracker-reward-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
       .stat-chart {
         grid-column: 1 / -1;
         min-height: 72px;
@@ -1731,6 +2050,20 @@
       .s1-grid { grid-template-columns: 1fr; height: auto; padding: 48px 0 32px; gap: 40px; }
       .clock-panel { padding: 0 0 32px; border-right: none; border-bottom: 1px solid color-mix(in srgb, var(--bg) 15%, transparent); }
       .progress-panel { padding: 0; }
+      .focus-head,
+      .focus-foot {
+        grid-template-columns: 1fr;
+      }
+      .focus-head {
+        flex-direction: column;
+      }
+      .focus-today-points {
+        width: 100%;
+        text-align: left;
+      }
+      .focus-settings {
+        grid-template-columns: 1fr;
+      }
       .s2-grid { grid-template-columns: 1fr; }
       .s2-bottom { grid-template-columns: 1fr 1fr; }
       .cal-months-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 24px; }
@@ -1837,6 +2170,9 @@
       .tracker-mobile-weekdays {
         display: grid;
       }
+      .tracker-reward-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
       .tracker-table-wrap {
         max-height: none;
       }
@@ -1878,6 +2214,12 @@
       }
       .day-primary-pct {
         font-size: 28px;
+      }
+      .focus-reward-grid,
+      .focus-foot,
+      .day-reward-grid,
+      .tracker-reward-summary {
+        grid-template-columns: 1fr;
       }
       .s2-stats {
         grid-template-columns: 1fr;

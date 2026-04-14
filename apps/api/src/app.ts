@@ -5,6 +5,8 @@ import { plansRouter } from './modules/plans/router';
 import { checksRouter } from './modules/checks/router';
 import { pluginsRouter } from './modules/plugins/router';
 import { aiReviewsRouter } from './modules/ai-reviews/router';
+import { focusSessionsRouter } from './modules/focus-sessions/router';
+import { rewardsRouter } from './modules/rewards/router';
 
 export function createApp() {
   const app = express();
@@ -21,6 +23,8 @@ export function createApp() {
   app.use('/api/checks', checksRouter);
   app.use('/api/plugins', pluginsRouter);
   app.use('/api/ai-reviews', aiReviewsRouter);
+  app.use('/api/focus-sessions', focusSessionsRouter);
+  app.use('/api/rewards', rewardsRouter);
 
   return app;
 }

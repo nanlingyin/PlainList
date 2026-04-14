@@ -1,7 +1,15 @@
 <template>
   <section class="section">
     <div class="section-header">
-      <h2 class="section-title">{{ year }}</h2>
+      <div>
+        <h2 class="section-title">{{ year }}</h2>
+        <div v-if="rewardSummary" class="year-reward-inline">
+          <span>{{ t('reward.points', 'Points') }} {{ rewardSummary.points }}</span>
+          <span>{{ t('reward.focus_sessions', 'Focus sessions') }} {{ rewardSummary.completedFocusSessions }}</span>
+          <span>{{ t('reward.perfect_days', 'Perfect days') }} {{ rewardSummary.perfectDays }}</span>
+          <span>{{ t('reward.badges', 'Badges') }} {{ rewardSummary.earnedBadges }}</span>
+        </div>
+      </div>
       <div class="year-nav">
         <button class="nav-btn" @click="year--">&#8592;</button>
         <button class="nav-btn" @click="year++">&#8594;</button>
@@ -98,13 +106,15 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { usePlansStore } from '@/features/plans/model/usePlansStore'
 import { useChecksStore } from '@/features/checks/model/useChecksStore'
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore'
 import { useI18nStore } from '@/shared/i18n/useI18nStore'
 
 const plansStore = usePlansStore()
 const checksStore = useChecksStore()
+const rewardsStore = useRewardsStore()
 const i18n = useI18nStore()
 
 const year = ref(new Date().getFullYear())
@@ -121,6 +131,8 @@ const WDAYS_S_DEFAULT  = ['Su','Mo','Tu','We','Th','Fr','Sa']
 const MONTHS_S = computed(() => i18n.L('MONTHS_S', MONTHS_S_DEFAULT))
 const MONTHS = computed(() => i18n.L('MONTHS', MONTHS_DEFAULT))
 const WDAYS_S  = computed(() => i18n.L('WDAYS_S', WDAYS_S_DEFAULT))
+const rewardReferenceDate = computed(() => `${year.value}-12-31`)
+const rewardSummary = computed(() => rewardsStore.periods[`year:${rewardReferenceDate.value}`] || null)
 
 const habits = computed(() => plansStore.plans.filter(p => p.type === 'habit'))
 
@@ -261,12 +273,24 @@ function heatmapLevel(habitId, week) {
   if (ratio > 0) return 'lvl1'
   return ''
 }
+
+watch(rewardReferenceDate, (referenceDate) => {
+  rewardsStore.fetchPeriod('year', referenceDate).catch(() => {})
+}, { immediate: true })
 </script>
 
 <style scoped>
 .section { padding: 2rem 1.5rem; }
 .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
 .section-title { font-size: 1.4rem; font-weight: 700; margin: 0; }
+.year-reward-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: .7rem;
+  color: var(--muted);
+}
 .year-nav { display: flex; gap: .4rem; }
 .nav-btn { background: none; border: 1px solid var(--faint); border-radius: 4px; padding: .2rem .6rem; cursor: pointer; font-size: .9rem; color: var(--mid); }
 .nav-btn:hover { background: var(--faint); }
@@ -433,6 +457,10 @@ function heatmapLevel(habitId, week) {
 
 @media (max-width: 768px) {
   .cal-grid { grid-template-columns: repeat(2, 1fr); }
+  .section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .day-popover {
     left: 12px !important;
     right: 12px !important;

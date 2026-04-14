@@ -57,6 +57,12 @@
       <WeekSection id="s3" class="app-section" style="--section-delay: 140ms" />
       <TrackerSection id="s4" class="app-section" style="--section-delay: 210ms" />
       <CalendarSection id="s5" class="app-section" style="--section-delay: 280ms" />
+      <ForestSection
+        v-if="pluginsStore.installedIds.has(FOCUS_FOREST_PLUGIN_ID)"
+        id="s6"
+        class="app-section"
+        style="--section-delay: 350ms"
+      />
 
       <PluginStore v-if="pluginStoreOpen" @close="onPluginStoreClose" />
     </template>
@@ -65,13 +71,15 @@
 
 <script setup lang="ts">
 import type { AuthAccount, AuthSuccessResponse } from '@plainlist/shared';
-import { DEMO_ACCOUNT } from '@plainlist/shared';
+import { DEMO_ACCOUNT, FOCUS_FOREST_PLUGIN_ID } from '@plainlist/shared';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
+import { useFocusStore } from '@/features/focus/model/useFocusStore';
 import { useLocaleStore } from '@/features/locale/model/useLocaleStore';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { usePluginsStore } from '@/features/plugins/model/usePluginsStore';
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore';
 import { useApi } from '@/shared/api/useApi';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 import AuthTerminal from '@/widgets/auth/AuthTerminal.vue';
@@ -79,6 +87,7 @@ import ShowcaseHome from '@/widgets/auth/ShowcaseHome.vue';
 import PluginStore from '@/widgets/plugins/PluginStore.vue';
 import CalendarSection from '@/widgets/sections/CalendarSection.vue';
 import ClockSection from '@/widgets/sections/ClockSection.vue';
+import ForestSection from '@/widgets/sections/ForestSection.vue';
 import PlansSection from '@/widgets/sections/PlansSection.vue';
 import TrackerSection from '@/widgets/sections/TrackerSection.vue';
 import WeekSection from '@/widgets/sections/WeekSection.vue';
@@ -86,8 +95,10 @@ import WeekSection from '@/widgets/sections/WeekSection.vue';
 const auth = useAuthStore();
 const plans = usePlansStore();
 const checks = useChecksStore();
+const focus = useFocusStore();
 const localeStore = useLocaleStore();
 const pluginsStore = usePluginsStore();
+const rewards = useRewardsStore();
 const i18n = useI18nStore();
 const { get, post } = useApi();
 
@@ -105,13 +116,21 @@ watch(
   { immediate: true },
 );
 
-const sections = computed(() => [
-  { id: 's1', label: i18n.t('nav.now', 'Now') },
-  { id: 's2', label: i18n.t('nav.day', 'Day') },
-  { id: 's3', label: i18n.t('nav.week', 'Week') },
-  { id: 's4', label: i18n.t('nav.month', 'Month') },
-  { id: 's5', label: i18n.t('nav.year', 'Year') },
-]);
+const sections = computed(() => {
+  const base = [
+    { id: 's1', label: i18n.t('nav.now', 'Now') },
+    { id: 's2', label: i18n.t('nav.day', 'Day') },
+    { id: 's3', label: i18n.t('nav.week', 'Week') },
+    { id: 's4', label: i18n.t('nav.month', 'Month') },
+    { id: 's5', label: i18n.t('nav.year', 'Year') },
+  ];
+
+  if (pluginsStore.installedIds.has(FOCUS_FOREST_PLUGIN_ID)) {
+    base.push({ id: 's6', label: i18n.t('nav.forest', 'Forest') });
+  }
+
+  return base;
+});
 
 const loaderText = computed(() => i18n.t('app.loader', 'Loading your dashboard...'));
 
@@ -179,6 +198,8 @@ async function loadDashboard() {
       checks.fetchMonth(year, month),
       checks.fetchMonth(month === 1 ? year - 1 : year, month === 1 ? 12 : month - 1),
       pluginsStore.loadInstalled(),
+      rewards.fetchOverview(),
+      focus.hydrate(),
     ]);
     await pluginsStore.loadActiveTheme();
   } finally {
@@ -200,7 +221,9 @@ async function logout() {
   isDashboardLoading.value = false;
   plans.clear();
   checks.clear();
+  focus.clear();
   pluginsStore.clear();
+  rewards.clear();
   auth.logout();
   entryMode.value = 'showcase';
 }

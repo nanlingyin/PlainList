@@ -53,6 +53,13 @@
         </div>
         <div class="pv-detail-desc">{{ activePlugin.longDescription || activePlugin.description }}</div>
 
+        <template v-if="activePlugin.features?.length">
+          <div class="pv-section-label">{{ t('plugins.features', 'Features') }}</div>
+          <ul class="pv-feature-list">
+            <li v-for="feature in activePlugin.features" :key="feature">{{ feature }}</li>
+          </ul>
+        </template>
+
         <template v-if="activePlugin.category === 'theme' && activePlugin.themes">
           <div class="pv-section-label">{{ t('plugins.themes', 'Themes') }}</div>
           <div class="pv-theme-grid">
@@ -133,7 +140,7 @@ const plugins = usePluginsStore();
 const i18n = useI18nStore();
 
 const filterQ = ref('');
-const filterCat = ref<'all' | 'theme'>('all');
+const filterCat = ref<'all' | 'theme' | 'feature'>('all');
 const activeId = ref<string | null>(null);
 const selectedThemeId = ref<string | null>(null);
 const previewTheme = ref<ThemeDefinition | null>(null);
@@ -143,12 +150,15 @@ function t(key: string, fallback: string) {
   return i18n.t(key, fallback);
 }
 
-const categories = computed<Array<{ key: 'all' | 'theme'; label: string }>>(() => {
-  const base: Array<{ key: 'all' | 'theme'; label: string }> = [
+const categories = computed<Array<{ key: 'all' | 'theme' | 'feature'; label: string }>>(() => {
+  const base: Array<{ key: 'all' | 'theme' | 'feature'; label: string }> = [
     { key: 'all', label: t('plugins.tab.all', 'All') },
   ];
   if (plugins.available.some((plugin) => plugin.category === 'theme')) {
     base.push({ key: 'theme', label: t('plugins.tab.theme', 'Theme') });
+  }
+  if (plugins.available.some((plugin) => plugin.category === 'feature')) {
+    base.push({ key: 'feature', label: t('plugins.tab.feature', 'Feature') });
   }
   return base;
 });

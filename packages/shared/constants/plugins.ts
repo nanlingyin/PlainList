@@ -1,10 +1,12 @@
 import type { PluginManifest, ThemeDefinition, ThemeVars } from '../types';
 
 export const THEME_PLUGIN_ID = 'theme-pack';
+export const FOCUS_FOREST_PLUGIN_ID = 'focus-forest';
 
 export const USER_SETTING_KEYS = {
   activeTheme: 'active_theme',
   installedPlugins: 'installed_plugins',
+  focusTimerSettings: 'focus_timer_settings',
 } as const;
 
 export const DEFAULT_THEME_ID = 'default';
@@ -119,6 +121,22 @@ const themePackThemes: ThemeDefinition[] = [
 ];
 
 export const PLUGIN_CATALOG: PluginManifest[] = [
+  {
+    id: FOCUS_FOREST_PLUGIN_ID,
+    name: 'Focus Forest',
+    version: '1.0.0',
+    category: 'feature',
+    author: 'PlainList',
+    description: 'Unlock a built-in forest page that turns completed focus sessions into clickable trees.',
+    longDescription:
+      'This first-party plugin unlocks the Focus Forest page, store, backpack, and progression views without executing arbitrary plugin JavaScript.',
+    features: [
+      'Unlock the Focus Forest page',
+      'Review each completed session as a tree',
+      'Access store and backpack for progression items',
+    ],
+    runtime: 'manifest',
+  },
   {
     id: THEME_PLUGIN_ID,
     name: 'Theme Pack',

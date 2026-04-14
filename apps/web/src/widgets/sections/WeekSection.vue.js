@@ -5,10 +5,12 @@ import * as echarts from 'echarts';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
 import { usePluginsStore } from '@/features/plugins/model/usePluginsStore';
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 const plansStore = usePlansStore();
 const checksStore = useChecksStore();
 const pluginsStore = usePluginsStore();
+const rewardsStore = useRewardsStore();
 const i18n = useI18nStore();
 function t(key, fallback, params) { return i18n.t(key, fallback, params); }
 const radarEl = ref(null);
@@ -31,6 +33,12 @@ const monday = computed(() => {
     date.setHours(0, 0, 0, 0);
     return date;
 });
+const rewardReferenceDate = computed(() => {
+    const sunday = new Date(monday.value);
+    sunday.setDate(monday.value.getDate() + 6);
+    return `${sunday.getFullYear()}-${pad(sunday.getMonth() + 1)}-${pad(sunday.getDate())}`;
+});
+const rewardSummary = computed(() => rewardsStore.periods[`week:${rewardReferenceDate.value}`] || null);
 const weekNumber = computed(() => {
     const start = new Date(today.getFullYear(), 0, 0);
     const diff = today - start;
@@ -263,6 +271,9 @@ watch(activeChart, () => {
         chartLine?.setOption(buildLineOption(), true);
     });
 });
+watch(rewardReferenceDate, (referenceDate) => {
+    rewardsStore.fetchPeriod('week', referenceDate).catch(() => { });
+}, { immediate: true });
 function onThemeChanged() {
     chartRadar?.setOption(buildRadarOption(), true);
     chartBar?.setOption(buildBarOption(), true);
@@ -305,7 +316,9 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['chart-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['active']} */ ;
 /** @type {__VLS_StyleScopedClasses['week-insight']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-reward-summary']} */ ;
 /** @type {__VLS_StyleScopedClasses['week-insight']} */ ;
+/** @type {__VLS_StyleScopedClasses['week-reward-summary']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "section" },
 });
@@ -530,7 +543,69 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 });
 /** @type {__VLS_StyleScopedClasses['insight-delta']} */ ;
 (__VLS_ctx.t('week.days_in_a_row', 'days in a row'));
+if (__VLS_ctx.rewardSummary) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "week-reward-summary" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-summary']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "week-reward-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "week-reward-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-label']} */ ;
+    (__VLS_ctx.t('reward.points', 'Points'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "week-reward-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-value']} */ ;
+    (__VLS_ctx.rewardSummary.points);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "week-reward-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "week-reward-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-label']} */ ;
+    (__VLS_ctx.t('reward.focus_sessions', 'Focus sessions'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "week-reward-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-value']} */ ;
+    (__VLS_ctx.rewardSummary.completedFocusSessions);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "week-reward-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "week-reward-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-label']} */ ;
+    (__VLS_ctx.t('reward.perfect_days', 'Perfect days'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "week-reward-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-value']} */ ;
+    (__VLS_ctx.rewardSummary.perfectDays);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "week-reward-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "week-reward-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-label']} */ ;
+    (__VLS_ctx.t('reward.badges', 'Badges'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "week-reward-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['week-reward-value']} */ ;
+    (__VLS_ctx.rewardSummary.earnedBadges);
+}
 // @ts-ignore
-[t, t, t, t, t, t, t, t, t, t, t, activeChart, activeChart, activeChart, avg, activeDays, activeDays, bestDay, maxPct, streak,];
+[t, t, t, t, t, t, t, t, t, t, t, t, t, t, t, activeChart, activeChart, activeChart, avg, activeDays, activeDays, bestDay, maxPct, streak, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary,];
 const __VLS_export = (await import('vue')).defineComponent({});
 export default {};

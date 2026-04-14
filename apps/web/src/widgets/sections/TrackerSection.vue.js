@@ -3,9 +3,11 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 const plans = usePlansStore();
 const checks = useChecksStore();
+const rewards = useRewardsStore();
 const i18n = useI18nStore();
 function t(key, fallback, params) { return i18n.t(key, fallback, params); }
 const now = new Date();
@@ -47,6 +49,8 @@ const monthNamesShort = computed(() => i18n.L('MONTHS_S', MONTHS_SHORT_DEFAULT))
 const weekDayHeaders = computed(() => i18n.L('WDAYS_M', WDAYS_M_DEFAULT));
 const tKey = computed(() => todayKey());
 const weeks = computed(() => getMonthWeeks(trackerYear.value, trackerMonth.value));
+const rewardReferenceDate = computed(() => `${trackerYear.value}-${String(trackerMonth.value + 1).padStart(2, '0')}-01`);
+const rewardSummary = computed(() => rewards.periods[`month:${rewardReferenceDate.value}`] || null);
 const monthLabel = computed(() => (i18n.locale === 'zh-CN'
     ? `${trackerYear.value}年${trackerMonth.value + 1}月`
     : `${monthNames.value[trackerMonth.value]} ${trackerYear.value}`));
@@ -165,6 +169,9 @@ async function loadMonth() {
     await checks.fetchMonth(trackerYear.value, trackerMonth.value + 1);
 }
 watch([trackerYear, trackerMonth], loadMonth);
+watch(rewardReferenceDate, (referenceDate) => {
+    rewards.fetchPeriod('month', referenceDate).catch(() => { });
+}, { immediate: true });
 onMounted(async () => {
     if (!plans.plans.length)
         await plans.fetch();
@@ -207,6 +214,68 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
 /** @type {__VLS_StyleScopedClasses['s3-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['s3-today-btn']} */ ;
 (__VLS_ctx.t('tracker.today', 'Today'));
+if (__VLS_ctx.rewardSummary) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-reward-summary" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-summary']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-reward-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "tracker-reward-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-label']} */ ;
+    (__VLS_ctx.t('reward.points', 'Points'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "tracker-reward-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-value']} */ ;
+    (__VLS_ctx.rewardSummary.points);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-reward-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "tracker-reward-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-label']} */ ;
+    (__VLS_ctx.t('reward.focus_sessions', 'Focus sessions'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "tracker-reward-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-value']} */ ;
+    (__VLS_ctx.rewardSummary.completedFocusSessions);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-reward-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "tracker-reward-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-label']} */ ;
+    (__VLS_ctx.t('reward.perfect_days', 'Perfect days'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "tracker-reward-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-value']} */ ;
+    (__VLS_ctx.rewardSummary.perfectDays);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "tracker-reward-item" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-item']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "tracker-reward-label" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-label']} */ ;
+    (__VLS_ctx.t('reward.badges', 'Badges'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+        ...{ class: "tracker-reward-value" },
+    });
+    /** @type {__VLS_StyleScopedClasses['tracker-reward-value']} */ ;
+    (__VLS_ctx.rewardSummary.earnedBadges);
+}
 if (!__VLS_ctx.plans.plans.length) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "empty-state" },
@@ -248,7 +317,7 @@ else {
         (__VLS_ctx.t('tracker.week_prefix', 'Week'));
         (wi + 1);
         // @ts-ignore
-        [prevMonth, monthLabel, nextMonth, goToday, t, t, t, t, plans, weeks, weekHasToday,];
+        [prevMonth, monthLabel, nextMonth, goToday, t, t, t, t, t, t, t, t, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, plans, weeks, weekHasToday,];
     }
     __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
         ...{ class: "th-pct col-pct" },

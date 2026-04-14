@@ -1,11 +1,13 @@
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 const plansStore = usePlansStore();
 const checksStore = useChecksStore();
+const rewardsStore = useRewardsStore();
 const i18n = useI18nStore();
 const year = ref(new Date().getFullYear());
 const today = new Date();
@@ -18,6 +20,8 @@ const WDAYS_S_DEFAULT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MONTHS_S = computed(() => i18n.L('MONTHS_S', MONTHS_S_DEFAULT));
 const MONTHS = computed(() => i18n.L('MONTHS', MONTHS_DEFAULT));
 const WDAYS_S = computed(() => i18n.L('WDAYS_S', WDAYS_S_DEFAULT));
+const rewardReferenceDate = computed(() => `${year.value}-12-31`);
+const rewardSummary = computed(() => rewardsStore.periods[`year:${rewardReferenceDate.value}`] || null);
 const habits = computed(() => plansStore.plans.filter(p => p.type === 'habit'));
 function t(key, fallback, params) {
     return i18n.t(key, fallback, params);
@@ -155,6 +159,9 @@ function heatmapLevel(habitId, week) {
         return 'lvl1';
     return '';
 }
+watch(rewardReferenceDate, (referenceDate) => {
+    rewardsStore.fetchPeriod('year', referenceDate).catch(() => { });
+}, { immediate: true });
 const __VLS_ctx = {
     ...{},
     ...{},
@@ -182,6 +189,7 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['day-popover-bullet']} */ ;
 /** @type {__VLS_StyleScopedClasses['day-popover-bullet']} */ ;
 /** @type {__VLS_StyleScopedClasses['cal-grid']} */ ;
+/** @type {__VLS_StyleScopedClasses['section-header']} */ ;
 /** @type {__VLS_StyleScopedClasses['day-popover']} */ ;
 /** @type {__VLS_StyleScopedClasses['cal-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['heatmap-row']} */ ;
@@ -195,11 +203,30 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "section-header" },
 });
 /** @type {__VLS_StyleScopedClasses['section-header']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
 __VLS_asFunctionalElement1(__VLS_intrinsics.h2, __VLS_intrinsics.h2)({
     ...{ class: "section-title" },
 });
 /** @type {__VLS_StyleScopedClasses['section-title']} */ ;
 (__VLS_ctx.year);
+if (__VLS_ctx.rewardSummary) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "year-reward-inline" },
+    });
+    /** @type {__VLS_StyleScopedClasses['year-reward-inline']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+    (__VLS_ctx.t('reward.points', 'Points'));
+    (__VLS_ctx.rewardSummary.points);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+    (__VLS_ctx.t('reward.focus_sessions', 'Focus sessions'));
+    (__VLS_ctx.rewardSummary.completedFocusSessions);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+    (__VLS_ctx.t('reward.perfect_days', 'Perfect days'));
+    (__VLS_ctx.rewardSummary.perfectDays);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+    (__VLS_ctx.t('reward.badges', 'Badges'));
+    (__VLS_ctx.rewardSummary.earnedBadges);
+}
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "year-nav" },
 });
@@ -208,7 +235,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
     ...{ onClick: (...[$event]) => {
             __VLS_ctx.year--;
             // @ts-ignore
-            [year, year,];
+            [year, year, rewardSummary, rewardSummary, rewardSummary, rewardSummary, rewardSummary, t, t, t, t,];
         } },
     ...{ class: "nav-btn" },
 });
@@ -411,7 +438,7 @@ if (__VLS_ctx.dayPopoverOpen && __VLS_ctx.dayPopover) {
             /** @type {__VLS_StyleScopedClasses['day-popover-time']} */ ;
             (task.time);
             // @ts-ignore
-            [dayPopoverOpen, dayPopover, dayPopover, dayPopover, dayPopover, dayPopover, dayPopover, closeDayPopover, closeDayPopover, popoverStyle, t, t, t,];
+            [t, t, t, dayPopoverOpen, dayPopover, dayPopover, dayPopover, dayPopover, dayPopover, dayPopover, closeDayPopover, closeDayPopover, popoverStyle,];
         }
     }
     else {

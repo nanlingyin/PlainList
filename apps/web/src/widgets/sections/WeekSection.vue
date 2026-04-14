@@ -77,6 +77,25 @@
         <div class="insight-delta">{{ t('week.days_in_a_row', 'days in a row') }}</div>
       </div>
     </div>
+
+    <div v-if="rewardSummary" class="week-reward-summary">
+      <div class="week-reward-item">
+        <span class="week-reward-label">{{ t('reward.points', 'Points') }}</span>
+        <strong class="week-reward-value">{{ rewardSummary.points }}</strong>
+      </div>
+      <div class="week-reward-item">
+        <span class="week-reward-label">{{ t('reward.focus_sessions', 'Focus sessions') }}</span>
+        <strong class="week-reward-value">{{ rewardSummary.completedFocusSessions }}</strong>
+      </div>
+      <div class="week-reward-item">
+        <span class="week-reward-label">{{ t('reward.perfect_days', 'Perfect days') }}</span>
+        <strong class="week-reward-value">{{ rewardSummary.perfectDays }}</strong>
+      </div>
+      <div class="week-reward-item">
+        <span class="week-reward-label">{{ t('reward.badges', 'Badges') }}</span>
+        <strong class="week-reward-value">{{ rewardSummary.earnedBadges }}</strong>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -86,11 +105,13 @@ import * as echarts from 'echarts'
 import { usePlansStore } from '@/features/plans/model/usePlansStore'
 import { useChecksStore } from '@/features/checks/model/useChecksStore'
 import { usePluginsStore } from '@/features/plugins/model/usePluginsStore'
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore'
 import { useI18nStore } from '@/shared/i18n/useI18nStore'
 
 const plansStore = usePlansStore()
 const checksStore = useChecksStore()
 const pluginsStore = usePluginsStore()
+const rewardsStore = useRewardsStore()
 const i18n = useI18nStore()
 function t(key, fallback, params) { return i18n.t(key, fallback, params) }
 
@@ -119,6 +140,12 @@ const monday = computed(() => {
   date.setHours(0, 0, 0, 0)
   return date
 })
+const rewardReferenceDate = computed(() => {
+  const sunday = new Date(monday.value)
+  sunday.setDate(monday.value.getDate() + 6)
+  return `${sunday.getFullYear()}-${pad(sunday.getMonth() + 1)}-${pad(sunday.getDate())}`
+})
+const rewardSummary = computed(() => rewardsStore.periods[`week:${rewardReferenceDate.value}`] || null)
 
 const weekNumber = computed(() => {
   const start = new Date(today.getFullYear(), 0, 0)
@@ -370,6 +397,10 @@ watch(activeChart, () => {
   })
 })
 
+watch(rewardReferenceDate, (referenceDate) => {
+  rewardsStore.fetchPeriod('week', referenceDate).catch(() => {})
+}, { immediate: true })
+
 function onThemeChanged() {
   chartRadar?.setOption(buildRadarOption(), true)
   chartBar?.setOption(buildBarOption(), true)
@@ -507,6 +538,33 @@ onBeforeUnmount(() => {
 .insight-delta { font-size: .65rem; color: var(--muted); }
 .insight-delta.up { color: var(--mid); }
 
+.week-reward-summary {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .8rem;
+}
+.week-reward-item {
+  border: 1px solid var(--faint);
+  border-radius: 12px;
+  padding: .9rem 1rem;
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+}
+.week-reward-label {
+  display: block;
+  font-size: .62rem;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.week-reward-value {
+  display: block;
+  margin-top: .45rem;
+  font-family: var(--mono);
+  font-size: 1.35rem;
+  color: var(--dark);
+}
+
 @media (max-width: 900px) {
   .charts-row {
     grid-template-columns: 1fr;
@@ -535,10 +593,18 @@ onBeforeUnmount(() => {
   .week-insight {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .week-reward-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 520px) {
   .week-insight {
+    grid-template-columns: 1fr;
+  }
+
+  .week-reward-summary {
     grid-template-columns: 1fr;
   }
 }

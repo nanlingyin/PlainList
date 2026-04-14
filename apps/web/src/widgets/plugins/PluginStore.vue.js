@@ -22,6 +22,9 @@ const categories = computed(() => {
     if (plugins.available.some((plugin) => plugin.category === 'theme')) {
         base.push({ key: 'theme', label: t('plugins.tab.theme', 'Theme') });
     }
+    if (plugins.available.some((plugin) => plugin.category === 'feature')) {
+        base.push({ key: 'feature', label: t('plugins.tab.feature', 'Feature') });
+    }
     return base;
 });
 const filtered = computed(() => (plugins.available.filter((plugin) => {
@@ -235,6 +238,25 @@ else {
     });
     /** @type {__VLS_StyleScopedClasses['pv-detail-desc']} */ ;
     (__VLS_ctx.activePlugin.longDescription || __VLS_ctx.activePlugin.description);
+    if (__VLS_ctx.activePlugin.features?.length) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "pv-section-label" },
+        });
+        /** @type {__VLS_StyleScopedClasses['pv-section-label']} */ ;
+        (__VLS_ctx.t('plugins.features', 'Features'));
+        __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
+            ...{ class: "pv-feature-list" },
+        });
+        /** @type {__VLS_StyleScopedClasses['pv-feature-list']} */ ;
+        for (const [feature] of __VLS_vFor((__VLS_ctx.activePlugin.features))) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+                key: (feature),
+            });
+            (feature);
+            // @ts-ignore
+            [t, t, t, filtered, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin,];
+        }
+    }
     if (__VLS_ctx.activePlugin.category === 'theme' && __VLS_ctx.activePlugin.themes) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
             ...{ class: "pv-section-label" },
@@ -254,7 +276,7 @@ else {
                             return;
                         __VLS_ctx.onSwatchClick(theme);
                         // @ts-ignore
-                        [t, t, t, filtered, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, activePlugin, onSwatchClick,];
+                        [t, activePlugin, activePlugin, activePlugin, onSwatchClick,];
                     } },
                 key: (theme.id),
                 ...{ class: (['pv-swatch', __VLS_ctx.selectedThemeId === theme.id ? 'active' : '']) },

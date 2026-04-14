@@ -6,11 +6,13 @@ import { useAiReviewStore } from '@/features/ai-review/model/useAiReviewStore';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 const aiReview = useAiReviewStore();
 const plans = usePlansStore();
 const checks = useChecksStore();
 const auth = useAuthStore();
+const rewards = useRewardsStore();
 const i18n = useI18nStore();
 function t(key, fallback, params) { return i18n.t(key, fallback, params); }
 const REVIEW_PERIODS = ['day', 'week', 'month', 'year'];
@@ -214,6 +216,30 @@ const reviewNextMove = computed(() => {
         });
     }
     return t('plan.ai.next_step_stable', 'The baseline is steady. Protect the routines that already work before adding anything new.');
+});
+const dayNextBadge = computed(() => rewards.overview?.badges.find((badge) => !badge.earned) ?? null);
+const dayNextBadgeLabel = computed(() => {
+    if (!dayNextBadge.value) {
+        return t('reward.all_badges', 'All current badges earned');
+    }
+    const map = {
+        'first-focus': t('reward.badge.first_focus', 'First focus session'),
+        'focus-8': t('reward.badge.focus_8', '8 focus sessions'),
+        'focus-25': t('reward.badge.focus_25', '25 focus sessions'),
+        'perfect-day-1': t('reward.badge.perfect_day', 'First perfect day'),
+        'streak-3': t('reward.badge.streak_3', '3-day perfect streak'),
+        'streak-7': t('reward.badge.streak_7', '7-day perfect streak'),
+    };
+    return map[dayNextBadge.value.id] || dayNextBadge.value.id;
+});
+const dayNextBadgeProgress = computed(() => {
+    if (!dayNextBadge.value) {
+        return t('reward.all_badges_sub', 'You have cleared the current reward set.');
+    }
+    return t('reward.badge_progress', '{progress}/{target}', {
+        progress: Math.min(dayNextBadge.value.progress, dayNextBadge.value.target),
+        target: dayNextBadge.value.target,
+    });
 });
 const chartEl = ref(null);
 let chartInst = null;
@@ -606,6 +632,75 @@ if (__VLS_ctx.secondaryView === 'overview') {
     /** @type {__VLS_StyleScopedClasses['day-secondary-pane-overview']} */ ;
     if (__VLS_ctx.plans.plans.length) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "day-reward-panel" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-panel']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "day-reward-grid" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-grid']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "day-reward-item" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-item']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "day-reward-label" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-label']} */ ;
+        (__VLS_ctx.t('reward.points_today', 'today points'));
+        __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+            ...{ class: "day-reward-value" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-value']} */ ;
+        (__VLS_ctx.rewards.overview?.todayPoints ?? 0);
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "day-reward-item" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-item']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "day-reward-label" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-label']} */ ;
+        (__VLS_ctx.t('reward.total_points', 'Total points'));
+        __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+            ...{ class: "day-reward-value" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-value']} */ ;
+        (__VLS_ctx.rewards.overview?.totalPoints ?? 0);
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "day-reward-item" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-item']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "day-reward-label" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-label']} */ ;
+        (__VLS_ctx.t('reward.streak', 'Perfect streak'));
+        __VLS_asFunctionalElement1(__VLS_intrinsics.strong, __VLS_intrinsics.strong)({
+            ...{ class: "day-reward-value" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-value']} */ ;
+        (__VLS_ctx.rewards.overview?.currentPerfectStreak ?? 0);
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "day-reward-foot" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-foot']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "day-reward-foot-label" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-foot-label']} */ ;
+        (__VLS_ctx.t('reward.next_badge', 'Next badge'));
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "day-reward-foot-value" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-foot-value']} */ ;
+        (__VLS_ctx.dayNextBadgeLabel);
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "day-reward-foot-sub" },
+        });
+        /** @type {__VLS_StyleScopedClasses['day-reward-foot-sub']} */ ;
+        (__VLS_ctx.dayNextBadgeProgress);
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
             ...{ class: "s2-stats" },
         });
         /** @type {__VLS_StyleScopedClasses['s2-stats']} */ ;
@@ -713,7 +808,7 @@ if (__VLS_ctx.secondaryView === 'overview') {
                 /** @type {__VLS_StyleScopedClasses['done']} */ ;
                 /** @type {__VLS_StyleScopedClasses['future']} */ ;
                 // @ts-ignore
-                [t, t, t, t, pct, doneCount, remainCount, plans, checks, secondaryView, secondaryView, prevMonth, monthLabel, nextMonth, daysInStrip, habitPlans,];
+                [t, t, t, t, t, t, t, t, pct, doneCount, remainCount, plans, checks, secondaryView, secondaryView, rewards, rewards, rewards, dayNextBadgeLabel, dayNextBadgeProgress, prevMonth, monthLabel, nextMonth, daysInStrip, habitPlans,];
             }
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
                 ...{ class: "day-pct" },

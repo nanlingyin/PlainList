@@ -104,6 +104,28 @@
 
       <div v-if="secondaryView === 'overview'" class="day-secondary-pane day-secondary-pane-overview">
         <template v-if="plans.plans.length">
+          <div class="day-reward-panel">
+            <div class="day-reward-grid">
+              <div class="day-reward-item">
+                <span class="day-reward-label">{{ t('reward.points_today', 'today points') }}</span>
+                <strong class="day-reward-value">{{ rewards.overview?.todayPoints ?? 0 }}</strong>
+              </div>
+              <div class="day-reward-item">
+                <span class="day-reward-label">{{ t('reward.total_points', 'Total points') }}</span>
+                <strong class="day-reward-value">{{ rewards.overview?.totalPoints ?? 0 }}</strong>
+              </div>
+              <div class="day-reward-item">
+                <span class="day-reward-label">{{ t('reward.streak', 'Perfect streak') }}</span>
+                <strong class="day-reward-value">{{ rewards.overview?.currentPerfectStreak ?? 0 }}</strong>
+              </div>
+            </div>
+            <div class="day-reward-foot">
+              <span class="day-reward-foot-label">{{ t('reward.next_badge', 'Next badge') }}</span>
+              <span class="day-reward-foot-value">{{ dayNextBadgeLabel }}</span>
+              <span class="day-reward-foot-sub">{{ dayNextBadgeProgress }}</span>
+            </div>
+          </div>
+
           <div class="s2-stats">
             <div class="stat-item">
               <span class="stat-val">{{ doneCount }}</span>
@@ -296,12 +318,14 @@ import { useAiReviewStore } from '@/features/ai-review/model/useAiReviewStore'
 import { usePlansStore } from '@/features/plans/model/usePlansStore'
 import { useChecksStore } from '@/features/checks/model/useChecksStore'
 import { useAuthStore } from '@/features/auth/model/useAuthStore'
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore'
 import { useI18nStore } from '@/shared/i18n/useI18nStore'
 
 const aiReview = useAiReviewStore()
 const plans = usePlansStore()
 const checks = useChecksStore()
 const auth = useAuthStore()
+const rewards = useRewardsStore()
 const i18n = useI18nStore()
 function t(key, fallback, params) { return i18n.t(key, fallback, params) }
 
@@ -539,6 +563,33 @@ const reviewNextMove = computed(() => {
   }
 
   return t('plan.ai.next_step_stable', 'The baseline is steady. Protect the routines that already work before adding anything new.')
+})
+const dayNextBadge = computed(() => rewards.overview?.badges.find((badge) => !badge.earned) ?? null)
+const dayNextBadgeLabel = computed(() => {
+  if (!dayNextBadge.value) {
+    return t('reward.all_badges', 'All current badges earned')
+  }
+
+  const map = {
+    'first-focus': t('reward.badge.first_focus', 'First focus session'),
+    'focus-8': t('reward.badge.focus_8', '8 focus sessions'),
+    'focus-25': t('reward.badge.focus_25', '25 focus sessions'),
+    'perfect-day-1': t('reward.badge.perfect_day', 'First perfect day'),
+    'streak-3': t('reward.badge.streak_3', '3-day perfect streak'),
+    'streak-7': t('reward.badge.streak_7', '7-day perfect streak'),
+  }
+
+  return map[dayNextBadge.value.id] || dayNextBadge.value.id
+})
+const dayNextBadgeProgress = computed(() => {
+  if (!dayNextBadge.value) {
+    return t('reward.all_badges_sub', 'You have cleared the current reward set.')
+  }
+
+  return t('reward.badge_progress', '{progress}/{target}', {
+    progress: Math.min(dayNextBadge.value.progress, dayNextBadge.value.target),
+    target: dayNextBadge.value.target,
+  })
 })
 
 const chartEl = ref(null)

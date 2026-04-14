@@ -1,12 +1,14 @@
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/template-helpers.d.ts" />
 /// <reference types="D:/jisuanjisheji/PlainList/node_modules/@vue/language-core/types/props-fallback.d.ts" />
-import { DEMO_ACCOUNT } from '@plainlist/shared';
+import { DEMO_ACCOUNT, FOCUS_FOREST_PLUGIN_ID } from '@plainlist/shared';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/features/auth/model/useAuthStore';
 import { useChecksStore } from '@/features/checks/model/useChecksStore';
+import { useFocusStore } from '@/features/focus/model/useFocusStore';
 import { useLocaleStore } from '@/features/locale/model/useLocaleStore';
 import { usePlansStore } from '@/features/plans/model/usePlansStore';
 import { usePluginsStore } from '@/features/plugins/model/usePluginsStore';
+import { useRewardsStore } from '@/features/rewards/model/useRewardsStore';
 import { useApi } from '@/shared/api/useApi';
 import { useI18nStore } from '@/shared/i18n/useI18nStore';
 import AuthTerminal from '@/widgets/auth/AuthTerminal.vue';
@@ -14,14 +16,17 @@ import ShowcaseHome from '@/widgets/auth/ShowcaseHome.vue';
 import PluginStore from '@/widgets/plugins/PluginStore.vue';
 import CalendarSection from '@/widgets/sections/CalendarSection.vue';
 import ClockSection from '@/widgets/sections/ClockSection.vue';
+import ForestSection from '@/widgets/sections/ForestSection.vue';
 import PlansSection from '@/widgets/sections/PlansSection.vue';
 import TrackerSection from '@/widgets/sections/TrackerSection.vue';
 import WeekSection from '@/widgets/sections/WeekSection.vue';
 const auth = useAuthStore();
 const plans = usePlansStore();
 const checks = useChecksStore();
+const focus = useFocusStore();
 const localeStore = useLocaleStore();
 const pluginsStore = usePluginsStore();
+const rewards = useRewardsStore();
 const i18n = useI18nStore();
 const { get, post } = useApi();
 const pluginStoreOpen = ref(false);
@@ -32,13 +37,19 @@ const dashboardReady = ref(false);
 watch(() => localeStore.locale, (locale) => {
     i18n.setLocale(locale);
 }, { immediate: true });
-const sections = computed(() => [
-    { id: 's1', label: i18n.t('nav.now', 'Now') },
-    { id: 's2', label: i18n.t('nav.day', 'Day') },
-    { id: 's3', label: i18n.t('nav.week', 'Week') },
-    { id: 's4', label: i18n.t('nav.month', 'Month') },
-    { id: 's5', label: i18n.t('nav.year', 'Year') },
-]);
+const sections = computed(() => {
+    const base = [
+        { id: 's1', label: i18n.t('nav.now', 'Now') },
+        { id: 's2', label: i18n.t('nav.day', 'Day') },
+        { id: 's3', label: i18n.t('nav.week', 'Week') },
+        { id: 's4', label: i18n.t('nav.month', 'Month') },
+        { id: 's5', label: i18n.t('nav.year', 'Year') },
+    ];
+    if (pluginsStore.installedIds.has(FOCUS_FOREST_PLUGIN_ID)) {
+        base.push({ id: 's6', label: i18n.t('nav.forest', 'Forest') });
+    }
+    return base;
+});
 const loaderText = computed(() => i18n.t('app.loader', 'Loading your dashboard...'));
 function t(key, fallback) {
     return i18n.t(key, fallback);
@@ -95,6 +106,8 @@ async function loadDashboard() {
             checks.fetchMonth(year, month),
             checks.fetchMonth(month === 1 ? year - 1 : year, month === 1 ? 12 : month - 1),
             pluginsStore.loadInstalled(),
+            rewards.fetchOverview(),
+            focus.hydrate(),
         ]);
         await pluginsStore.loadActiveTheme();
     }
@@ -115,7 +128,9 @@ async function logout() {
     isDashboardLoading.value = false;
     plans.clear();
     checks.clear();
+    focus.clear();
     pluginsStore.clear();
+    rewards.clear();
     auth.logout();
     entryMode.value = 'showcase';
 }
@@ -373,23 +388,38 @@ else {
         ...{ style: {} },
     }, ...__VLS_functionalComponentArgsRest(__VLS_44));
     /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
-    if (__VLS_ctx.pluginStoreOpen) {
-        const __VLS_48 = PluginStore;
+    if (__VLS_ctx.pluginsStore.installedIds.has(__VLS_ctx.FOCUS_FOREST_PLUGIN_ID)) {
+        const __VLS_48 = ForestSection;
         // @ts-ignore
         const __VLS_49 = __VLS_asFunctionalComponent1(__VLS_48, new __VLS_48({
-            ...{ 'onClose': {} },
+            id: "s6",
+            ...{ class: "app-section" },
+            ...{ style: {} },
         }));
         const __VLS_50 = __VLS_49({
-            ...{ 'onClose': {} },
+            id: "s6",
+            ...{ class: "app-section" },
+            ...{ style: {} },
         }, ...__VLS_functionalComponentArgsRest(__VLS_49));
-        let __VLS_53;
-        const __VLS_54 = ({ close: {} },
+        /** @type {__VLS_StyleScopedClasses['app-section']} */ ;
+    }
+    if (__VLS_ctx.pluginStoreOpen) {
+        const __VLS_53 = PluginStore;
+        // @ts-ignore
+        const __VLS_54 = __VLS_asFunctionalComponent1(__VLS_53, new __VLS_53({
+            ...{ 'onClose': {} },
+        }));
+        const __VLS_55 = __VLS_54({
+            ...{ 'onClose': {} },
+        }, ...__VLS_functionalComponentArgsRest(__VLS_54));
+        let __VLS_58;
+        const __VLS_59 = ({ close: {} },
             { onClose: (__VLS_ctx.onPluginStoreClose) });
-        var __VLS_51;
-        var __VLS_52;
+        var __VLS_56;
+        var __VLS_57;
     }
 }
 // @ts-ignore
-[t, t, pluginStoreOpen, logout, onPluginStoreClose,];
+[t, t, pluginStoreOpen, logout, pluginsStore, FOCUS_FOREST_PLUGIN_ID, onPluginStoreClose,];
 const __VLS_export = (await import('vue')).defineComponent({});
 export default {};
