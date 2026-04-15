@@ -304,6 +304,7 @@ export function buildRewardModel(
       progress,
       earned: progress >= definition.target,
       achievedAt,
+      icon: definition.icon,
     };
   });
 

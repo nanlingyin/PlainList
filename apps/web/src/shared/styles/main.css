@@ -1903,7 +1903,6 @@
     }
     .ai-review-hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.45fr) minmax(220px, .95fr);
       gap: 12px;
     }
     .ai-review-story,

@@ -145,23 +145,20 @@
             <div class="focus-achievement-panel-head">
               <div>
                 <div class="focus-foot-label">{{ t('reward.earned_achievements', 'Earned achievements') }}</div>
-                <div class="focus-achievement-panel-count">{{ earnedAchievements.length }}</div>
+                <div class="focus-achievement-panel-count">{{ earnedAchievements.length }} / {{ allAchievements.length }}</div>
               </div>
-              <button
-                v-if="earnedAchievements.length > 4"
+              <a
+                href="#s7"
                 class="focus-achievement-toggle"
-                type="button"
-                @click="achievementsExpanded = !achievementsExpanded"
+                @click.prevent="scrollToAchievements"
               >
-                {{ achievementsExpanded
-                  ? t('reward.achievement.show_less', 'Show less')
-                  : t('reward.achievement.show_all', 'Show all') }}
-              </button>
+                {{ t('achievements.view_all', 'View all') }} →
+              </a>
             </div>
 
-            <div v-if="visibleEarnedAchievements.length" class="focus-achievement-list">
+            <div v-if="earnedAchievements.length" class="focus-achievement-list">
               <article
-                v-for="achievement in visibleEarnedAchievements"
+                v-for="achievement in earnedAchievements.slice(0, 3)"
                 :key="achievement.id"
                 class="focus-achievement-item"
               >
@@ -321,7 +318,6 @@ const pendingSettings = ref<FocusTimerSettings>({ ...focus.settings })
 const helpOpen = ref(false)
 const helpDialogOpen = ref(false)
 const helpPopoverStyle = ref<Record<string, string>>({})
-const achievementsExpanded = ref(false)
 let timer: number | null = null
 
 const hm = computed(() => pad(now.value.getHours()) + ':' + pad(now.value.getMinutes()))
@@ -470,8 +466,12 @@ const nextAchievementCondition = computed(() => {
   return achievementConditionLabel(nextAchievement.value)
 })
 const nextAchievementCategory = computed(() => nextAchievement.value ? achievementCategoryLabel(nextAchievement.value) : '')
-const earnedAchievements = computed(() => (rewards.overview?.achievements ?? []).filter((achievement) => achievement.earned))
-const visibleEarnedAchievements = computed(() => achievementsExpanded.value ? earnedAchievements.value : earnedAchievements.value.slice(0, 4))
+const allAchievements = computed(() => rewards.overview?.achievements ?? [])
+const earnedAchievements = computed(() => allAchievements.value.filter((achievement) => achievement.earned))
+
+function scrollToAchievements() {
+  document.getElementById('s7')?.scrollIntoView({ behavior: 'smooth' })
+}
 
 function formatAchievementDate(value: string) {
   const date = new Date(value)

@@ -58,11 +58,12 @@
       <TrackerSection id="s4" class="app-section" style="--section-delay: 210ms" />
       <CalendarSection id="s5" class="app-section" style="--section-delay: 280ms" />
       <StoreSection id="s6" class="app-section" style="--section-delay: 350ms" />
+      <AchievementWallSection id="s7" class="app-section" style="--section-delay: 420ms" />
       <ForestSection
         v-if="pluginsStore.installedIds.has(FOCUS_FOREST_PLUGIN_ID)"
-        id="s7"
+        id="s8"
         class="app-section"
-        style="--section-delay: 420ms"
+        style="--section-delay: 490ms"
       />
 
       <PluginStore v-if="pluginStoreOpen" @close="onPluginStoreClose" />
@@ -88,6 +89,7 @@ import ShowcaseHome from '@/widgets/auth/ShowcaseHome.vue';
 import PluginStore from '@/widgets/plugins/PluginStore.vue';
 import CalendarSection from '@/widgets/sections/CalendarSection.vue';
 import ClockSection from '@/widgets/sections/ClockSection.vue';
+import AchievementWallSection from '@/widgets/sections/AchievementWallSection.vue';
 import ForestSection from '@/widgets/sections/ForestSection.vue';
 import PlansSection from '@/widgets/sections/PlansSection.vue';
 import StoreSection from '@/widgets/sections/StoreSection.vue';
@@ -128,8 +130,10 @@ const sections = computed(() => {
     { id: 's6', label: i18n.t('nav.store', 'Store') },
   ];
 
+  base.push({ id: 's7', label: i18n.t('nav.achievements', 'Achievements') });
+
   if (pluginsStore.installedIds.has(FOCUS_FOREST_PLUGIN_ID)) {
-    base.push({ id: 's7', label: i18n.t('nav.forest', 'Forest') });
+    base.push({ id: 's8', label: i18n.t('nav.forest', 'Forest') });
   }
 
   return base;

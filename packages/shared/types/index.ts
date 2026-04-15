@@ -167,6 +167,7 @@ export interface RewardAchievementProgress {
   progress: number;
   earned: boolean;
   achievedAt: string | null;
+  icon: string;
 }
 
 export interface RewardBadgeProgress extends RewardAchievementProgress {}
